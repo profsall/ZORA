@@ -42,7 +42,7 @@ Aplikasi menggunakan pendekatan **server-rendered PHP**. Browser mengirimkan per
 
 | Informasi | Keterangan |
 |---|---|
-| Nama aplikasi | ZORA — Electronics Store |
+| Nama aplikasi | ZORA Electronics Store |
 | Jenis aplikasi | Website e-commerce / toko elektronik |
 | Bahasa utama | PHP |
 | Arsitektur | Model–View–Controller (MVC) sederhana |
