@@ -232,6 +232,18 @@ class Product
     }
 
     /**
+     * Membatalkan arsip produk (mengembalikan status menjadi 'active' agar kembali dijual).
+     *
+     * @param int $id ID produk.
+     */
+    public static function restore(int $id): void
+    {
+        db()->prepare(
+            "UPDATE products SET status = 'active' WHERE id = ?"
+        )->execute([$id]);
+    }
+
+    /**
      * Membuat slug unik berdasarkan slug dasar.
      * Menambahkan suffix angka (-2, -3, dst.) jika slug sudah digunakan.
      *

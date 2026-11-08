@@ -123,10 +123,10 @@ $statusLabels = [
                                     </td>
                                     <td>
                                         <div class="admin-actions">
-                                            <?php if ($p['status'] !== 'archived'): ?>
-                                                <a href="<?= base_url('admin/products/edit/' . (int) $p['id']) ?>"
-                                                   class="btn-zora btn-small">Edit</a>
+                                            <a href="<?= base_url('admin/products/edit/' . (int) $p['id']) ?>"
+                                               class="btn-zora btn-small">Edit</a>
 
+                                            <?php if ($p['status'] !== 'archived'): ?>
                                                 <form method="post"
                                                       action="<?= base_url('admin/products/delete') ?>"
                                                       onsubmit="return confirm('Arsipkan produk ini?')">
@@ -135,7 +135,13 @@ $statusLabels = [
                                                     <button class="subtle-button" type="submit">Arsipkan</button>
                                                 </form>
                                             <?php else: ?>
-                                                <span style="font-size:11px;color:var(--muted)">Diarsipkan</span>
+                                                <form method="post"
+                                                      action="<?= base_url('admin/products/restore') ?>"
+                                                      onsubmit="return confirm('Aktifkan kembali produk ini ke katalog?')">
+                                                    <?= csrf_field() ?>
+                                                    <input type="hidden" name="product_id" value="<?= (int) $p['id'] ?>">
+                                                    <button class="subtle-button" type="submit" style="color:var(--blue);font-weight:600">Batal Arsip</button>
+                                                </form>
                                             <?php endif; ?>
                                         </div>
                                     </td>

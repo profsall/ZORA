@@ -233,6 +233,39 @@ class AdminController
     }
 
     /**
+     * Membatalkan arsip produk (mengaktifkan kembali produk ke katalog penjualan).
+     */
+    public function restoreProduct(): void
+    {
+        require_admin();
+
+        if (!is_post()) {
+            http_response_code(405);
+            exit('Method not allowed.');
+        }
+
+        verify_csrf();
+
+        $id = (int) ($_POST['product_id'] ?? 0);
+
+        if ($id <= 0 || !Product::find($id)) {
+            flash('error', 'Produk tidak ditemukan.');
+            redirect('admin/products');
+            return;
+        }
+
+        try {
+            Product::restore($id);
+            flash('success', 'Produk berhasil diaktifkan kembali dan kini tampil di katalog.');
+        } catch (Throwable $e) {
+            error_log($e->getMessage());
+            flash('error', 'Gagal mengaktifkan kembali produk.');
+        }
+
+        redirect('admin/products');
+    }
+
+    /**
      * Memperbarui status pesanan.
      *
      * SECURITY FIX (H7): Sebelumnya $e->getMessage() langsung dikirim ke

@@ -114,10 +114,11 @@ try {
                 // FIX (H6): Tambahkan route untuk edit dan update produk yang
                 // sebelumnya sudah dikodekan di controller tapi tidak punya route.
                 match ($third) {
-                    'create' => $admin->createProduct(),
-                    'delete' => $admin->deleteProduct(),
-                    'update' => $admin->updateProduct(),   // POST: simpan perubahan
-                    default  => (function () use ($admin, $third): void {
+                    'create'  => $admin->createProduct(),
+                    'delete'  => $admin->deleteProduct(),
+                    'restore' => $admin->restoreProduct(),  // POST: batalkan arsip / aktifkan produk
+                    'update'  => $admin->updateProduct(),   // POST: simpan perubahan
+                    default   => (function () use ($admin, $third): void {
                         // /admin/products/edit/{id}
                         if (str_starts_with($third, 'edit')) {
                             // Ambil ID dari segmen keempat URL: /admin/products/edit/5
