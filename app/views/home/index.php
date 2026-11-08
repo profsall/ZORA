@@ -10,7 +10,12 @@
             </div>
         </div>
         <div class="hero-visual">
-            <img src="https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&w=1400&q=90" alt="Perangkat elektronik di atas meja kerja">
+            <!-- FIX (H8): Hero image adalah LCP element — gunakan loading="eager" (default)
+             dan fetchpriority="high" agar browser memprioritaskan load gambar ini. -->
+        <img src="https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&w=1400&q=90"
+             alt="Perangkat elektronik di atas meja kerja"
+             fetchpriority="high"
+             width="700" height="430">
             <div class="hero-chip">
                 <strong>Everyday essentials</strong>
                 <span>Temukan yang kamu butuhkan.</span>

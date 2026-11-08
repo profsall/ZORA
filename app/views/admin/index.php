@@ -1,3 +1,26 @@
+<?php
+/**
+ * Label status pesanan dalam Bahasa Indonesia.
+ * FIX (L5): Sebelumnya status ditampilkan dalam bahasa Inggris (pending, confirmed, dll.)
+ * Sekarang menggunakan label yang lebih informatif untuk admin.
+ */
+$statusLabels = [
+    'pending'    => 'Menunggu',
+    'confirmed'  => 'Dikonfirmasi',
+    'processing' => 'Diproses',
+    'shipped'    => 'Dikirim',
+    'completed'  => 'Selesai',
+    'cancelled'  => 'Dibatalkan',
+];
+
+$statusOptions = [
+    'confirmed'  => 'Dikonfirmasi',
+    'processing' => 'Diproses',
+    'shipped'    => 'Dikirim',
+    'completed'  => 'Selesai',
+    'cancelled'  => 'Dibatalkan',
+];
+?>
 <section class="container standard-page admin-page">
     <div class="page-title">
         <span class="eyebrow">ZORA MANAGEMENT</span>
@@ -19,7 +42,7 @@
             <strong><?= number_format($stats['customers']) ?></strong>
         </div>
         <div>
-            <small>Omzet pesanan terkonfirmasi</small>
+            <small>Omzet terkonfirmasi</small>
             <strong><?= rupiah($stats['revenue']) ?></strong>
         </div>
     </div>
@@ -33,7 +56,7 @@
         <table class="table zora-table">
             <thead>
                 <tr>
-                    <th>Pesanan</th>
+                    <th>No. Pesanan</th>
                     <th>Pelanggan</th>
                     <th>Total</th>
                     <th>Status</th>
@@ -41,25 +64,36 @@
                 </tr>
             </thead>
             <tbody>
-                <?php foreach($orders as $o): ?>
+                <?php foreach ($orders as $o): ?>
+                    <?php $currentStatus = $o['order_status']; ?>
                     <tr>
                         <td><?= e($o['order_number']) ?></td>
-                        <td><?= e($o['customer_name']??'Pelanggan') ?></td>
+                        <td><?= e($o['customer_name'] ?? 'Pelanggan') ?></td>
                         <td><?= rupiah($o['total_amount']) ?></td>
-                        <td><?= e($o['order_status']) ?></td>
                         <td>
-                            <form class="status-form" method="post" action="<?= base_url('admin/orders/update') ?>">
-                                <?= csrf_field() ?>
-                                <input type="hidden" name="order_id" value="<?= (int)$o['id'] ?>">
-                                <select name="status">
-                                    <option value="confirmed">Confirmed</option>
-                                    <option value="processing">Processing</option>
-                                    <option value="shipped">Shipped</option>
-                                    <option value="completed">Completed</option>
-                                    <option value="cancelled">Cancelled</option>
-                                </select>
-                                <button class="btn-zora btn-small">Simpan</button>
-                            </form>
+                            <span class="status-pill status-<?= e($currentStatus) ?>">
+                                <?= e($statusLabels[$currentStatus] ?? ucfirst($currentStatus)) ?>
+                            </span>
+                        </td>
+                        <td>
+                            <?php if ($currentStatus !== 'cancelled'): ?>
+                                <form class="status-form" method="post"
+                                      action="<?= base_url('admin/orders/update') ?>">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="order_id" value="<?= (int) $o['id'] ?>">
+                                    <select name="status" aria-label="Ubah status pesanan <?= e($o['order_number']) ?>">
+                                        <?php foreach ($statusOptions as $value => $label): ?>
+                                            <option value="<?= e($value) ?>"
+                                                <?= $value === $currentStatus ? 'selected' : '' ?>>
+                                                <?= e($label) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <button class="btn-zora btn-small" type="submit">Simpan</button>
+                                </form>
+                            <?php else: ?>
+                                <span class="text-muted" style="font-size:12px">Dibatalkan</span>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>
