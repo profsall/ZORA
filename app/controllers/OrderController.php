@@ -1,12 +1,74 @@
+
 <?php
+
 class OrderController
 {
+    /**
+     * Menampilkan semua pesanan milik pengguna.
+     */
     public function index(): void
-    { require_login(); render('account/orders',['pageTitle'=>'Pesanan Saya','orders'=>Order::forUser((int)current_user()['id'])]); }
+    {
+        require_login();
+
+        $userId = (int) current_user()['id'];
+
+        $orders = Order::forUser($userId);
+
+        render('account/orders', [
+            'pageTitle' => 'Pesanan Saya',
+            'orders' => $orders
+        ]);
+    }
+
+    /**
+     * Menampilkan detail pesanan.
+     */
     public function show(string $id): void
     {
-        require_login(); $order=Order::findForUser((int)$id,(int)current_user()['id']);
-        if(!$order){http_response_code(404);render('home/not-found',['pageTitle'=>'Pesanan tidak ditemukan']);return;}
-        render('account/order',['pageTitle'=>'Detail Pesanan','order'=>$order,'items'=>Order::items((int)$id),'payment'=>Payment::forOrder((int)$id)]);
+        require_login();
+
+        $orderId = filter_var(
+            $id,
+            FILTER_VALIDATE_INT
+        );
+
+        if ($orderId === false || $orderId <= 0) {
+            http_response_code(404);
+
+            render('home/not-found', [
+                'pageTitle' => 'Pesanan tidak ditemukan'
+            ]);
+
+            return;
+        }
+
+        $userId = (int) current_user()['id'];
+
+        // Periksa kepemilikan pesanan.
+        $order = Order::findForUser(
+            $orderId,
+            $userId
+        );
+
+        if (!$order) {
+            http_response_code(404);
+
+            render('home/not-found', [
+                'pageTitle' => 'Pesanan tidak ditemukan'
+            ]);
+
+            return;
+        }
+
+        $items = Order::items($orderId);
+
+        $payment = Payment::forOrder($orderId);
+
+        render('account/order', [
+            'pageTitle' => 'Detail Pesanan',
+            'order' => $order,
+            'items' => $items,
+            'payment' => $payment
+        ]);
     }
 }

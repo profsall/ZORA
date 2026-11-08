@@ -47,6 +47,5 @@
             </p>
         </aside>
     </div>
-
     <a href="<?= base_url('orders') ?>" class="text-link">← Kembali ke pesanan</a>
 </section>
