@@ -32,12 +32,12 @@ $metaDescription = $metaDescription
          <link> memungkinkan parallel request (lebih cepat). -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
-    <!-- ZORA CSS -->
-    <link href="<?= asset('css/style.css') ?>" rel="stylesheet">
-    <link href="<?= asset('css/responsive.css') ?>" rel="stylesheet">
+    <!-- ZORA CSS dengan cache-buster otomatis agar setiap perubahan CSS langsung aktif di browser -->
+    <link href="<?= asset('css/style.css') ?>?v=<?= file_exists(__DIR__ . '/../../../public/assets/css/style.css') ? filemtime(__DIR__ . '/../../../public/assets/css/style.css') : time() ?>" rel="stylesheet">
+    <link href="<?= asset('css/responsive.css') ?>?v=<?= file_exists(__DIR__ . '/../../../public/assets/css/responsive.css') ? filemtime(__DIR__ . '/../../../public/assets/css/responsive.css') : time() ?>" rel="stylesheet">
 
     <?php if (is_admin()): ?>
-        <link href="<?= asset('css/admin.css') ?>" rel="stylesheet">
+        <link href="<?= asset('css/admin.css') ?>?v=<?= file_exists(__DIR__ . '/../../../public/assets/css/admin.css') ? filemtime(__DIR__ . '/../../../public/assets/css/admin.css') : time() ?>" rel="stylesheet">
     <?php endif; ?>
 </head>
 <body>

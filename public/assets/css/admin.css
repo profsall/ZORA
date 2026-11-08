@@ -79,3 +79,62 @@
         transition: none;
     }
 }
+
+
+/* ==========================================================
+   KONTROL TOMBOL & STATUS TABEL PRODUK ADMIN
+   ========================================================== */
+
+/* Status Produk: Tulisan Hijau untuk Aktif, Merah untuk Diarsipkan */
+.status-pill.status-active {
+    background: #dcfce7 !important;
+    color: #15803d !important;
+    border: 1px solid #86efac !important;
+    font-weight: 700 !important;
+}
+
+.status-pill.status-archived {
+    background: #fee2e2 !important;
+    color: #dc2626 !important;
+    border: 1px solid #fca5a5 !important;
+    font-weight: 700 !important;
+}
+
+/* Jarak renggang antar-tombol aksi di tabel */
+.admin-actions {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    white-space: nowrap !important;
+}
+
+.admin-actions form {
+    margin: 0 !important;
+    display: inline-flex !important;
+}
+
+/* Tombol Edit */
+.admin-actions .btn-edit {
+    background: #174a82 !important;
+    color: #ffffff !important;
+}
+
+/* Tombol Arsipkan (Bentuk & Ukuran Sama Seperti Tombol Edit) */
+.admin-actions .btn-archive {
+    background: #475569 !important;
+    color: #ffffff !important;
+}
+
+.admin-actions .btn-archive:hover {
+    background: #334155 !important;
+}
+
+/* Tombol Batal Arsip (Warna Merah Tegas) */
+.admin-actions .btn-unarchive {
+    background: #dc2626 !important;
+    color: #ffffff !important;
+}
+
+.admin-actions .btn-unarchive:hover {
+    background: #b91c1c !important;
+}

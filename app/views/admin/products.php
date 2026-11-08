@@ -95,7 +95,7 @@ $statusLabels = [
                                 <th>Harga</th>
                                 <th>Stok</th>
                                 <th>Status</th>
-                                <th>Aksi</th>
+                                <th style="min-width:180px">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -124,7 +124,7 @@ $statusLabels = [
                                     <td>
                                         <div class="admin-actions">
                                             <a href="<?= base_url('admin/products/edit/' . (int) $p['id']) ?>"
-                                               class="btn-zora btn-small">Edit</a>
+                                               class="btn-zora btn-small btn-edit">Edit</a>
 
                                             <?php if ($p['status'] !== 'archived'): ?>
                                                 <form method="post"
@@ -132,7 +132,7 @@ $statusLabels = [
                                                       onsubmit="return confirm('Arsipkan produk ini?')">
                                                     <?= csrf_field() ?>
                                                     <input type="hidden" name="product_id" value="<?= (int) $p['id'] ?>">
-                                                    <button class="subtle-button" type="submit">Arsipkan</button>
+                                                    <button class="btn-zora btn-small btn-archive" type="submit">Arsipkan</button>
                                                 </form>
                                             <?php else: ?>
                                                 <form method="post"
@@ -140,7 +140,7 @@ $statusLabels = [
                                                       onsubmit="return confirm('Aktifkan kembali produk ini ke katalog?')">
                                                     <?= csrf_field() ?>
                                                     <input type="hidden" name="product_id" value="<?= (int) $p['id'] ?>">
-                                                    <button class="subtle-button" type="submit" style="color:var(--blue);font-weight:600">Batal Arsip</button>
+                                                    <button class="btn-zora btn-small btn-unarchive" type="submit">Batal Arsip</button>
                                                 </form>
                                             <?php endif; ?>
                                         </div>
