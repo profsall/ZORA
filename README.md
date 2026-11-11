@@ -112,82 +112,63 @@ ZORA/
 │
 ├── app/
 │   ├── controllers/
+│   │   ├── AdminController.php
 │   │   ├── AuthController.php
-│   │   ├── HomeController.php
-│   │   ├── ProductController.php
 │   │   ├── CartController.php
 │   │   ├── CheckoutController.php
+│   │   ├── HomeController.php
 │   │   ├── OrderController.php
-│   │   └── AdminController.php
+│   │   └── ProductController.php
+│   │
+│   ├── helpers/
+│   │   ├── auth.php
+│   │   ├── functions.php
+│   │   └── validation.php
 │   │
 │   ├── models/
-│   │   ├── User.php
-│   │   ├── Product.php
-│   │   ├── Category.php
 │   │   ├── Cart.php
+│   │   ├── Category.php
 │   │   ├── Order.php
-│   │   └── Payment.php
+│   │   ├── Payment.php
+│   │   ├── Product.php
+│   │   └── User.php
 │   │
-│   ├── views/
-│   │   ├── layouts/
-│   │   │   ├── header.php
-│   │   │   ├── navbar.php
-│   │   │   └── footer.php
-│   │   ├── home/
-│   │   │   ├── index.php
-│   │   │   └── not-found.php
-│   │   ├── products/
-│   │   │   ├── index.php
-│   │   │   └── detail.php
-│   │   ├── cart/
-│   │   │   └── index.php
-│   │   ├── checkout/
-│   │   │   ├── index.php
-│   │   │   └── success.php
-│   │   ├── auth/
-│   │   │   ├── login.php
-│   │   │   └── register.php
-│   │   ├── account/
-│   │   │   ├── index.php
-│   │   │   ├── orders.php
-│   │   │   └── order.php
-│   │   └── admin/
-│   │       ├── index.php
-│   │       └── products.php
-│   │
-│   └── helpers/
-│       ├── auth.php
-│       ├── validation.php
-│       └── functions.php
+│   └── views/
+│       ├── account/
+│       ├── admin/
+│       ├── auth/
+│       ├── cart/
+│       ├── checkout/
+│       ├── home/
+│       ├── layouts/
+│       └── products/
 │
 ├── config/
 │   └── database.php
 │
 ├── public/
 │   ├── index.php
-│   ├── .htaccess
 │   └── assets/
 │       ├── css/
-│       │   ├── style.css
+│       │   ├── admin.css
 │       │   ├── responsive.css
-│       │   └── admin.css
-│       ├── js/
-│       │   ├── main.js
-│       │   ├── cart.js
-│       │   ├── filter.js
-│       │   └── checkout.js
-│       └── images/
-│           └── zora-mark.svg
+│       │   └── style.css
+│       ├── images/
+│       │   └── zora-mark.svg
+│       └── js/
+│           ├── cart.js
+│           ├── checkout.js
+│           ├── filter.js
+│           └── main.js
 │
 ├── storage/
 │   └── uploads/
-│       ├── products/
-│       └── payments/
+│       ├── payments/
+│       └── products/
 │
-├── .htaccess
 ├── .gitignore
-├── zora.sql
-└── README.md
+├── README.md
+└── zora.sql
 ```
 
 ### Fungsi direktori dan file penting
@@ -288,7 +269,7 @@ Ketika checkout berhasil, stok produk dikurangi sesuai kuantitas pesanan. Jika a
 
 ## 7. Struktur dan Relasi Database
 
-Nama database: **`zora`**  
+Nama database: **`pemweb-teori`**  
 Charset: `utf8mb4`  
 Collation: `utf8mb4_unicode_ci`  
 Storage engine: InnoDB.
@@ -320,9 +301,9 @@ Relasi database menggunakan foreign key. Penghapusan beberapa data induk menerap
 
 ### Data contoh
 
-Skrip `zora.sql` memasukkan enam kategori dan delapan produk awal, antara lain Nova Phone X, AirBook 14, Studio Headphones, Motion Watch, Room Speaker Mini, Pocket Camera, Tab S Lite, dan Precision Mouse.
+Skrip `zora.sql` menyiapkan 11 tabel yang digunakan aplikasi, membuat akun demo administrator, memasukkan enam kategori, dan memasukkan 24 produk contoh (empat produk per kategori). Skrip menggunakan `CREATE TABLE IF NOT EXISTS` dan tidak menjalankan `DROP TABLE`.
 
-**Peringatan:** skrip `zora.sql` menggunakan `DROP TABLE IF EXISTS` untuk tabel-tabel ZORA sebelum membuat ulang struktur. Import ulang akan menghapus data lama pada tabel tersebut. Lakukan backup terlebih dahulu jika database sudah berisi data penting.
+Skrip aman dari penghapusan tabel secara otomatis, tetapi `CREATE TABLE IF NOT EXISTS` tidak memperbaiki struktur tabel lama yang kolomnya berbeda. Untuk instalasi awal, gunakan database kosong bernama `zora`. Jika database sudah dipakai, lakukan backup dan bandingkan struktur tabel sebelum mengimpor.
 
 ## 8. Persyaratan Sistem
 
@@ -331,7 +312,7 @@ Skrip `zora.sql` memasukkan enam kategori dan delapan produk awal, antara lain N
 - PHP **8.0 atau lebih baru**; proyek diuji sintaks dengan PHP 8.2.
 - MySQL atau MariaDB yang mendukung InnoDB dan foreign key.
 - Ekstensi PHP `pdo_mysql` aktif.
-- `mod_rewrite` Apache aktif untuk URL bersih.
+- Apache aktif. Proyek ini **tidak menggunakan `.htaccess` maupun `mod_rewrite`**; routing menggunakan Query String PHP.
 - Browser modern seperti Chrome, Edge, Firefox, atau Safari.
 - Koneksi internet untuk Bootstrap CDN, Bootstrap Icons, Google Fonts, dan gambar produk eksternal.
 
@@ -360,15 +341,16 @@ Buka XAMPP Control Panel, lalu aktifkan:
 
 Pastikan keduanya berjalan tanpa konflik port.
 
-### Langkah 3 — Buat database
+### Langkah 3 — Buat database dan tabel
 
 1. Buka `http://localhost/phpmyadmin`.
 2. Pilih tab **Import**.
 3. Klik **Choose File** dan pilih `C:\xampp\htdocs\ZORA\zora.sql`.
 4. Klik **Import** atau **Go**.
-5. Pastikan database `zora` muncul di panel kiri dan tabel berhasil dibuat.
+5. Pastikan database `pemweb-teori` muncul dan terdapat 11 tabel.
+6. Periksa tabel `categories` (6 kategori) dan `products` (24 produk contoh).
 
-Skrip SQL membuat database `zora` secara otomatis, jadi tidak perlu membuat database secara manual sebelum import.
+Skrip akan membuat database `pemweb-teori` secara otomatis. Jalankan pada database baru untuk instalasi pertama. Jangan menghapus database lama sebelum melakukan backup.
 
 ### Langkah 4 — Periksa koneksi database
 
@@ -376,7 +358,7 @@ Buka `config/database.php`. Konfigurasi default untuk instalasi XAMPP standar ad
 
 ```php
 const DB_HOST = '127.0.0.1';
-const DB_NAME = 'zora';
+const DB_NAME = 'pemweb-teori';
 const DB_USER = 'root';
 const DB_PASS = '';
 ```
@@ -385,21 +367,23 @@ Sesuaikan `DB_USER` dan `DB_PASS` bila MySQL lokal menggunakan username atau pas
 
 ### Langkah 5 — Buka aplikasi
 
-Gunakan URL:
+Buka URL utama:
 
 ```text
-http://localhost/ZORA/public/
+http://localhost/ZORA/public/index.php
 ```
 
-**Penting:** untuk struktur proyek ini, halaman utama berada di folder `public`. Karena itu, gunakan URL `/ZORA/public/`, bukan `/ZORA/`. Akses langsung ke `http://localhost/ZORA/` dapat menampilkan `403 Forbidden` karena folder root tidak memiliki file index publik dan directory listing dinonaktifkan. Ini merupakan perilaku proteksi direktori, bukan bukti bahwa database gagal.
-
-Jika Apache dan `mod_rewrite` berjalan normal, URL aplikasi dapat digunakan seperti:
+Proyek ini tidak menggunakan `.htaccess`. Semua halaman diarahkan melalui `public/index.php` dengan parameter `url`. Contoh:
 
 ```text
-http://localhost/ZORA/public/products
-http://localhost/ZORA/public/cart
-http://localhost/ZORA/public/login
+http://localhost/ZORA/public/index.php?url=products
+http://localhost/ZORA/public/index.php?url=cart
+http://localhost/ZORA/public/index.php?url=login
+http://localhost/ZORA/public/index.php?url=products/nova-phone-x
+http://localhost/ZORA/public/index.php?url=admin
 ```
+
+Jangan membuka `http://localhost/ZORA/cart` atau `/ZORA/public/cart` karena URL path bersih memerlukan rewrite Apache, yang memang tidak dipakai oleh proyek ini.
 
 ## 10. Konfigurasi Database
 
@@ -427,44 +411,51 @@ Role     : admin
 Akses login:
 
 ```text
-http://localhost/ZORA/public/login
+http://localhost/ZORA/public/index.php?url=login
 ```
 
 Akses dashboard setelah login:
 
 ```text
-http://localhost/ZORA/public/admin
+http://localhost/ZORA/public/index.php?url=admin
 ```
 
 Akun tersebut hanya untuk pengembangan lokal. Jangan gunakan password demo pada server publik. Ganti password dan tinjau akun demo sebelum deployment.
 
 ## 12. Daftar URL/Route
 
-Semua route diproses oleh `public/index.php`.
+Semua halaman diproses oleh `public/index.php` menggunakan Query String PHP. Format URL dasar:
 
-| URL (relatif terhadap `/ZORA/public/`) | Metode umum | Fungsi | Akses |
+```text
+http://localhost/ZORA/public/index.php?url=NAMA_ROUTE
+```
+
+| URL | Metode | Fungsi | Akses |
 |---|---|---|---|
-| `/` atau `/home` | GET | Homepage | Publik |
-| `/products` | GET | Katalog, pencarian, filter, dan pengurutan | Publik |
-| `/products/{slug}` | GET | Detail produk | Publik |
-| `/login` | GET, POST | Login | Publik |
-| `/register` | GET, POST | Registrasi | Publik |
-| `/logout` | POST | Logout | Login |
-| `/cart` | GET | Melihat keranjang | Publik |
-| `/cart/add` | POST | Menambahkan produk | Publik |
-| `/cart/update` | POST | Mengubah kuantitas | Publik |
-| `/cart/remove` | POST | Menghapus item | Publik |
-| `/checkout` | GET, POST | Form checkout dan pembuatan pesanan | Login |
-| `/account` | GET | Ringkasan akun | Login |
-| `/orders` | GET | Riwayat pesanan | Login |
-| `/orders/{id}` | GET | Detail pesanan milik pengguna | Login |
-| `/admin` | GET | Dashboard admin | Admin |
-| `/admin/products` | GET | Daftar produk admin | Admin |
-| `/admin/products/create` | POST | Menambahkan produk | Admin |
-| `/admin/products/delete` | POST | Mengarsipkan produk | Admin |
-| `/admin/orders/update` | POST | Memperbarui status pesanan | Admin |
+| `?url=home` | GET | Homepage | Publik |
+| `?url=products` | GET | Katalog, pencarian, filter, dan sorting | Publik |
+| `?url=products/{slug}` | GET | Detail produk | Publik |
+| `?url=login` | GET, POST | Login | Publik |
+| `?url=register` | GET, POST | Registrasi | Publik |
+| `?url=logout` | POST | Logout | Login |
+| `?url=cart` | GET | Melihat keranjang | Publik |
+| `?url=cart/add` | POST | Menambahkan produk | Publik |
+| `?url=cart/update` | POST | Mengubah kuantitas | Publik |
+| `?url=cart/remove` | POST | Menghapus item | Publik |
+| `?url=checkout` | GET, POST | Form checkout dan pembuatan pesanan | Login |
+| `?url=account` | GET | Ringkasan akun | Login |
+| `?url=orders` | GET | Riwayat pesanan | Login |
+| `?url=orders/{id}` | GET | Detail pesanan milik pengguna | Login |
+| `?url=admin` | GET | Dashboard admin | Admin |
+| `?url=admin/products` | GET | Daftar produk admin | Admin |
+| `?url=admin/products/create` | POST | Menambahkan produk | Admin |
+| `?url=admin/products/edit/{id}` | GET | Form edit produk | Admin |
+| `?url=admin/products/update` | POST | Menyimpan edit produk | Admin |
+| `?url=admin/products/delete` | POST | Mengarsipkan produk | Admin |
+| `?url=admin/products/restore` | POST | Mengaktifkan kembali produk | Admin |
+| `?url=admin/orders/update` | POST | Memperbarui status pesanan | Admin |
 
-Untuk operasi yang mengubah data, form menggunakan token CSRF dan metode POST.
+Form yang mengubah data menggunakan POST dan token CSRF. Parameter pencarian seperti `q`, `category`, dan `sort` dikirim sebagai parameter tambahan selain `url`.
 
 ## 13. Penjelasan MVC
 
@@ -521,11 +512,9 @@ Fitur keamanan yang sudah diterapkan pada kode:
 - Halaman checkout mensyaratkan login.
 - Halaman admin memeriksa role pengguna melalui `require_admin()`.
 - Detail pesanan pelanggan dibatasi berdasarkan ID pengguna yang sedang login.
-- Direktori `app`, `config`, dan `storage` diblokir dari akses HTTP langsung melalui `.htaccess` root.
-- Listing direktori dinonaktifkan dengan `Options -Indexes`.
 - Pembuatan pesanan memeriksa stok di dalam transaksi database dan menggunakan row lock (`FOR UPDATE`).
 
-**Catatan:** perlindungan `.htaccess` bergantung pada konfigurasi Apache. Pada deployment, document root sebaiknya diarahkan langsung ke folder `public`, gunakan HTTPS, matikan tampilan error detail, atur permission file, validasi semua file upload, serta lakukan backup rutin.
+**Catatan keamanan karena proyek sengaja tidak memakai `.htaccess`:** folder `app`, `config`, dan `storage` masih berada di bawah `htdocs` dan berpotensi diminta langsung melalui URL. Untuk penggunaan yang lebih aman, arahkan Apache DocumentRoot/VirtualHost langsung ke folder `ZORA/public`, atau tambahkan aturan `Require all denied` pada konfigurasi Apache `httpd.conf` untuk folder internal. Jangan mengandalkan kerahasiaan URL. Pada deployment, gunakan HTTPS, matikan tampilan error detail, atur permission file, validasi semua file upload, serta lakukan backup rutin.
 
 ## 15. Batasan Fitur Saat Ini
 
@@ -534,7 +523,7 @@ Bagian ini penting agar status aplikasi tidak disalahartikan sebagai sistem prod
 1. **Payment gateway belum tersedia.** Metode transfer bank, QRIS, e-wallet, dan COD dicatat sebagai pilihan pada tabel pembayaran. Status awal pembayaran adalah `pending`; belum ada integrasi Midtrans, Xendit, atau penyedia pembayaran lainnya.
 2. **Upload bukti pembayaran belum aktif.** Kolom `proof_image` dan folder `storage/uploads/payments` sudah disiapkan, tetapi alur upload dan verifikasi belum dibuat.
 3. **Upload foto produk belum aktif.** Admin saat ini memasukkan URL gambar produk. Folder `storage/uploads/products` disiapkan untuk pengembangan berikutnya.
-4. **Manajemen produk belum CRUD penuh.** Fitur yang tersedia adalah tambah dan arsip produk; edit produk belum tersedia.
+4. **Manajemen produk belum CRUD penuh.** Fitur tambah, edit, arsip, dan pemulihan produk sudah tersedia. Upload gambar file langsung belum tersedia; admin memasukkan URL gambar.
 5. **Manajemen kategori belum tersedia di dashboard.** Kategori saat ini berasal dari seed database atau perubahan langsung melalui database.
 6. **Manajemen alamat belum lengkap.** Tabel `user_addresses` sudah dibuat, tetapi halaman CRUD alamat belum tersedia. Informasi pengiriman pada checkout disimpan sebagai snapshot di pesanan.
 7. **Wishlist belum memiliki antarmuka aktif.** Tabel `wishlist_items` sudah disiapkan untuk pengembangan berikutnya.
@@ -546,13 +535,13 @@ Bagian ini penting agar status aplikasi tidak disalahartikan sebagai sistem prod
 
 ### A. Muncul `403 Forbidden` saat membuka `http://localhost/ZORA/`
 
-Buka URL yang sesuai dengan lokasi front controller:
+Buka URL front controller secara langsung:
 
 ```text
-http://localhost/ZORA/public/
+http://localhost/ZORA/public/index.php
 ```
 
-Folder root proyek tidak ditujukan untuk menjadi document root pada konfigurasi lokal ini. `Options -Indexes` menonaktifkan daftar isi direktori, sehingga membuka folder tanpa index publik dapat menghasilkan 403.
+Folder root proyek bukan document root publik. Tanpa `.htaccess`, buka file `public/index.php` secara eksplisit.
 
 ### B. Pesan “Koneksi database ZORA gagal”
 
@@ -563,9 +552,15 @@ Periksa hal berikut:
 3. Nama database, username, dan password pada `config/database.php` sesuai dengan instalasi lokal.
 4. Ekstensi `pdo_mysql` aktif di PHP.
 
-### C. URL selain homepage menghasilkan 404 atau tidak terbaca
+### C. URL selain homepage tidak terbuka
 
-Pastikan `mod_rewrite` aktif dan konfigurasi Apache mengizinkan `.htaccess` melalui `AllowOverride All` untuk direktori proyek. Setelah mengubah `httpd.conf`, restart Apache.
+Pastikan tautan menggunakan format Query String, misalnya:
+
+```text
+http://localhost/ZORA/public/index.php?url=cart
+```
+
+Jangan menggunakan `/ZORA/public/cart`. Routing proyek ini berjalan di PHP melalui parameter `url`, bukan melalui `.htaccess` atau `mod_rewrite`.
 
 ### D. Gambar atau font tidak tampil
 

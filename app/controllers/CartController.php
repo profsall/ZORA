@@ -117,11 +117,11 @@ class CartController
     }
 
     /**
-     * Mengembalikan path relatif dari HTTP_REFERER jika aman,
-     * atau path fallback jika referrer tidak valid / dari domain lain.
+     * Mengambil route dari HTTP_REFERER untuk mengembalikan pelanggan
+     * ke halaman asal setelah menambahkan produk.
      *
-     * @param string $fallback Path fallback (relatif terhadap base URL).
-     * @return string
+     * Bekerja dengan URL tanpa .htaccess:
+     * /ZORA/public/index.php?url=products/nova-phone-x
      */
     private function safeReferer(string $fallback): string
     {
@@ -131,24 +131,48 @@ class CartController
             return $fallback;
         }
 
-        $refererHost = parse_url($referer, PHP_URL_HOST);
-        $currentHost = $_SERVER['HTTP_HOST'] ?? '';
+        $refererHost = strtolower(
+            (string) parse_url($referer, PHP_URL_HOST)
+        );
 
-        // Hanya ikuti referrer jika dari host yang sama.
-        if ($refererHost !== $currentHost) {
+        $currentHost = strtolower(
+            (string) parse_url(
+                'http://' . ($_SERVER['HTTP_HOST'] ?? ''),
+                PHP_URL_HOST
+            )
+        );
+
+        if ($refererHost === '' || $refererHost !== $currentHost) {
             return $fallback;
         }
 
-        // Ambil path relatif dari referrer (tanpa domain).
-        $scriptDir = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/');
         $refererPath = parse_url($referer, PHP_URL_PATH) ?? '';
+        $expectedPath = public_base_path() . '/index.php';
 
-        // Hapus base path agar menjadi path relatif ZORA.
-        if ($scriptDir !== '' && str_starts_with($refererPath, $scriptDir)) {
-            $relative = ltrim(substr($refererPath, strlen($scriptDir)), '/');
-            return $relative !== '' ? $relative : $fallback;
+        if ($refererPath !== $expectedPath) {
+            return $fallback;
         }
 
-        return $fallback;
+        $queryString = parse_url($referer, PHP_URL_QUERY) ?? '';
+        parse_str($queryString, $params);
+
+        $route = $params['url'] ?? '';
+
+        if (!is_string($route) || $route === '') {
+            return $fallback;
+        }
+
+        $route = trim($route, '/');
+
+        // Hanya izinkan karakter route sederhana; hindari path traversal.
+        if (!preg_match('~^[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*$~', $route)) {
+            return $fallback;
+        }
+
+        unset($params['url']);
+
+        $extraQuery = http_build_query($params);
+
+        return $route . ($extraQuery !== '' ? '?' . $extraQuery : '');
     }
 }

@@ -1,34 +1,78 @@
 <?php
-/**
- * Kumpulan fungsi helper global untuk ZORA Electronics.
- * Berisi utilitas URL, sanitasi output (Anti-XSS), keamanan form (CSRF),
- * formatting mata uang, flash message, dan sistem rendering template.
- */
 
 /**
- * Menghasilkan URL absolut berbasis root folder aplikasi.
- * Menjamin link tetap bekerja meskipun folder proyek dipindah-pindah di XAMPP.
+ * Mengambil base path folder public berdasarkan lokasi index.php.
+ *
+ * Contoh SCRIPT_NAME:
+ * /ZORA/public/index.php
+ * Hasil:
+ * /ZORA/public
+ */
+function public_base_path(): string
+{
+    $scriptName = str_replace(
+        '\\',
+        '/',
+        $_SERVER['SCRIPT_NAME'] ?? '/index.php'
+    );
+
+    $directory = dirname($scriptName);
+
+    if ($directory === '.' || $directory === '/') {
+        return '';
+    }
+
+    return rtrim($directory, '/');
+}
+
+/**
+ * Membuat URL halaman melalui Query String.
+ *
+ * Contoh:
+ * base_url('cart')
+ * /ZORA/public/index.php?url=cart
+ *
+ * Contoh dengan filter:
+ * base_url('products?category=audio&sort=price_asc')
+ * /ZORA/public/index.php?url=products&category=audio&sort=price_asc
  */
 function base_url(string $path = ''): string
 {
-    // Mengambil direktori script saat ini dan menormalisasi backslash Windows.
-    $base = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/');
-    if ($base === '.' || $base === '/') {
-        $base = '';
+    $parts = explode('?', $path, 2);
+    $route = trim($parts[0], '/');
+
+    if ($route === '') {
+        $route = 'home';
     }
-    return $base . '/' . ltrim($path, '/');
+
+    $segments = array_map(
+        static fn(string $segment): string => rawurlencode($segment),
+        explode('/', $route)
+    );
+
+    $url = public_base_path()
+        . '/index.php?url='
+        . implode('/', $segments);
+
+    if (isset($parts[1]) && $parts[1] !== '') {
+        $url .= '&' . ltrim($parts[1], '&');
+    }
+
+    return $url;
 }
 
 /**
- * Menghasilkan URL langsung ke file aset statis (CSS, JS, gambar).
+ * URL untuk aset statis. Aset tidak melewati router.
  */
 function asset(string $path): string
 {
-    return base_url('assets/' . ltrim($path, '/'));
+    return public_base_path()
+        . '/assets/'
+        . ltrim(str_replace('\\', '/', $path), '/');
 }
 
 /**
- * Mengarahkan (redirect) pengguna ke URL internal tertentu lalu menghentikan eksekusi script.
+ * Redirect ke route internal aplikasi.
  */
 function redirect(string $path): void
 {
@@ -144,7 +188,13 @@ function verify_csrf(): void
  */
 function old(string $key, string $default = ''): string
 {
-    return e($_POST[$key] ?? $default);
+    $value = $_POST[$key] ?? $default;
+
+    if (!is_scalar($value)) {
+        $value = $default;
+    }
+
+    return e((string) $value);
 }
 
 /**

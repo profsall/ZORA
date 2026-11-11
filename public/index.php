@@ -1,17 +1,24 @@
 <?php
 declare(strict_types=1);
+
 session_start();
 
+// 1. Konfigurasi database dan helper.
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../app/helpers/functions.php';
 require_once __DIR__ . '/../app/helpers/auth.php';
 require_once __DIR__ . '/../app/helpers/validation.php';
 
-spl_autoload_register(function (string $class): void {
-    foreach ([
-        __DIR__ . '/../app/models/' . $class . '.php',
-        __DIR__ . '/../app/controllers/' . $class . '.php',
-    ] as $file) {
+// 2. Autoload Model dan Controller berdasarkan nama class.
+spl_autoload_register(static function (string $class): void {
+    $directories = [
+        __DIR__ . '/../app/models/',
+        __DIR__ . '/../app/controllers/',
+    ];
+
+    foreach ($directories as $directory) {
+        $file = $directory . $class . '.php';
+
         if (is_file($file)) {
             require_once $file;
             return;
@@ -19,45 +26,75 @@ spl_autoload_register(function (string $class): void {
     }
 });
 
-// Periksa koneksi database saat startup.
+// 3. Periksa koneksi database.
 try {
     db();
 } catch (Throwable $e) {
+    error_log('[ZORA database] ' . $e->getMessage());
     http_response_code(500);
-    error_log($e->getMessage());
-    echo '<h1>Koneksi database ZORA gagal</h1>'
-        . '<p>Pastikan MySQL aktif, database <strong>zora</strong> sudah diimpor, '
-        . 'dan konfigurasi pada <code>config/database.php</code> benar.</p>';
+
+    echo '<!doctype html>
+    <html lang="id">
+    <head><meta charset="utf-8"><title>Koneksi Database Gagal</title></head>
+    <body style="font-family:Arial,sans-serif;padding:40px">
+        <h1>Koneksi database ZORA gagal</h1>
+        <p>Pastikan MySQL aktif dan database <strong>pemweb-teori</strong>
+        sudah dibuat serta dikonfigurasi dengan benar di
+        <code>config/database.php</code>.</p>
+    </body>
+    </html>';
     exit;
 }
 
-// Parse URL path.
-$path   = trim((string) ($_GET['url'] ?? ''), '/');
-$parts  = $path === '' ? [] : explode('/', $path);
+// 4. Ambil route dari Query String.
+// Contoh: index.php?url=admin/products/edit/5
+$urlValue = $_GET['url'] ?? '';
+
+$path = is_string($urlValue)
+    ? trim($urlValue, '/')
+    : '';
+
+$parts = ($path === '')
+    ? []
+    : explode('/', $path);
+
 $first  = $parts[0] ?? 'home';
 $second = $parts[1] ?? '';
 $third  = $parts[2] ?? '';
+$fourth = $parts[3] ?? '';
 
+// Tolak route dengan segmen kosong atau karakter yang tidak diizinkan.
+if (
+    $path !== '' &&
+    !preg_match('~^[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*$~', $path)
+) {
+    http_response_code(404);
+    render('home/not-found', [
+        'pageTitle' => 'Halaman Tidak Ditemukan',
+    ]);
+    exit;
+}
+
+// 5. Routing aplikasi.
 try {
     switch ($first) {
-
-        // ── Halaman Utama ─────────────────────────────────────────────────────
-        case '':
+        // Homepage.
         case 'home':
             (new HomeController())->index();
             break;
 
-        // ── Produk ───────────────────────────────────────────────────────────
+        // Katalog dan detail produk.
         case 'products':
-            $controller = new ProductController();
+            $productController = new ProductController();
+
             if ($second !== '') {
-                $controller->show($second);
+                $productController->show($second);
             } else {
-                $controller->index();
+                $productController->index();
             }
             break;
 
-        // ── Autentikasi ───────────────────────────────────────────────────────
+        // Authentication.
         case 'login':
             (new AuthController())->login();
             break;
@@ -70,83 +107,108 @@ try {
             (new AuthController())->logout();
             break;
 
-        // ── Keranjang ─────────────────────────────────────────────────────────
+        // Cart.
         case 'cart':
-            $cart = new CartController();
-            match ($second) {
-                'add'    => $cart->add(),
-                'update' => $cart->update(),
-                'remove' => $cart->remove(),
-                default  => $cart->index(),
-            };
-            break;
+            $cartController = new CartController();
 
-        // ── Checkout ──────────────────────────────────────────────────────────
-        case 'checkout':
-            $checkout = new CheckoutController();
-            if (is_post()) {
-                $checkout->store();
-            } else {
-                $checkout->index();
+            switch ($second) {
+                case 'add':
+                    $cartController->add();
+                    break;
+
+                case 'update':
+                    $cartController->update();
+                    break;
+
+                case 'remove':
+                    $cartController->remove();
+                    break;
+
+                default:
+                    $cartController->index();
+                    break;
             }
             break;
 
-        // ── Akun Pelanggan ────────────────────────────────────────────────────
+        // Checkout.
+        case 'checkout':
+            $checkoutController = new CheckoutController();
+
+            if (is_post()) {
+                $checkoutController->store();
+            } else {
+                $checkoutController->index();
+            }
+            break;
+
+        // Account.
         case 'account':
             require_login();
-            render('account/index', ['pageTitle' => 'Akun Saya']);
+
+            render('account/index', [
+                'pageTitle' => 'Akun Saya',
+            ]);
             break;
 
+        // Order history and detail.
         case 'orders':
-            $orders = new OrderController();
+            $orderController = new OrderController();
+
             if ($second !== '') {
-                $orders->show($second);
+                $orderController->show($second);
             } else {
-                $orders->index();
+                $orderController->index();
             }
             break;
 
-        // ── Admin ─────────────────────────────────────────────────────────────
+        // Admin.
         case 'admin':
-            $admin = new AdminController();
+            $adminController = new AdminController();
 
             if ($second === 'products') {
-                // FIX (H6): Tambahkan route untuk edit dan update produk yang
-                // sebelumnya sudah dikodekan di controller tapi tidak punya route.
-                match ($third) {
-                    'create'  => $admin->createProduct(),
-                    'delete'  => $admin->deleteProduct(),
-                    'restore' => $admin->restoreProduct(),  // POST: batalkan arsip / aktifkan produk
-                    'update'  => $admin->updateProduct(),   // POST: simpan perubahan
-                    default   => (function () use ($admin, $third): void {
-                        // /admin/products/edit/{id}
-                        if (str_starts_with($third, 'edit')) {
-                            // Ambil ID dari segmen keempat URL: /admin/products/edit/5
-                            $productId = (int) ($GLOBALS['parts'][3] ?? 0);
-                            $admin->editProduct($productId);
-                        } else {
-                            $admin->products();
-                        }
-                    })(),
-                };
+                if ($third === 'edit') {
+                    $adminController->editProduct((int) $fourth);
+                } elseif ($third === 'create') {
+                    $adminController->createProduct();
+                } elseif ($third === 'update') {
+                    $adminController->updateProduct();
+                } elseif ($third === 'delete') {
+                    $adminController->deleteProduct();
+                } elseif ($third === 'restore') {
+                    $adminController->restoreProduct();
+                } else {
+                    $adminController->products();
+                }
             } elseif ($second === 'orders' && $third === 'update') {
-                $admin->updateOrderStatus();
+                $adminController->updateOrderStatus();
             } else {
-                $admin->index();
+                $adminController->index();
             }
             break;
 
-        // ── 404 ───────────────────────────────────────────────────────────────
+        // Route tidak dikenal.
         default:
             http_response_code(404);
-            render('home/not-found', ['pageTitle' => 'Halaman tidak ditemukan']);
-    }
 
+            render('home/not-found', [
+                'pageTitle' => 'Halaman Tidak Ditemukan',
+            ]);
+            break;
+    }
 } catch (Throwable $e) {
-    error_log($e->getMessage());
+    error_log('[ZORA application] ' . $e->getMessage());
+
     http_response_code(500);
-    echo '<main style="font-family:Arial;padding:40px">'
-        . '<h1>Terjadi kesalahan</h1>'
-        . '<p>Permintaan belum dapat diproses. Periksa konfigurasi dan log PHP.</p>'
-        . '</main>';
+
+    // Tidak memanggil view errors/500 karena file tersebut
+    // tidak tersedia pada struktur proyek saat ini.
+    echo '<!doctype html>
+    <html lang="id">
+    <head><meta charset="utf-8"><title>Terjadi Kesalahan</title></head>
+    <body style="font-family:Arial,sans-serif;padding:40px">
+        <h1>Terjadi kesalahan</h1>
+        <p>Permintaan belum dapat diproses. Silakan coba kembali.</p>
+        <a href="' . e(base_url('home')) . '">Kembali ke beranda</a>
+    </body>
+    </html>';
 }
