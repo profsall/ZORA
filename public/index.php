@@ -1,7 +1,6 @@
 <?php
 /**
  * HALAMAN UTAMA APLIKASI (FRONT CONTROLLER)
- * =========================================
  * Semua permintaan masuk lewat file ini.
  * Tugasnya: memuat file pendukung, membaca alamat URL,
  * lalu memanggil controller yang sesuai.
@@ -10,23 +9,15 @@
 // Mulai session untuk menyimpan data login dan keranjang
 session_start();
 
-
-// ==============================================================
 // BAGIAN 1: MEMUAT FILE PENDUKUNG
-// ==============================================================
-
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../app/helpers/functions.php';
 require_once __DIR__ . '/../app/helpers/auth.php';
 require_once __DIR__ . '/../app/helpers/validation.php';
 
-
-// ==============================================================
 // BAGIAN 2: MEMUAT CLASS SECARA OTOMATIS
-// ==============================================================
 // Jadi kita tidak perlu menulis require untuk setiap model/controller.
 // Cukup sebut nama class-nya, file akan dicari otomatis.
-
 spl_autoload_register(function ($namaClass) {
     $folder = [
         __DIR__ . '/../app/models/',
@@ -43,14 +34,9 @@ spl_autoload_register(function ($namaClass) {
     }
 });
 
-
-// ==============================================================
 // BAGIAN 3: MEMERIKSA KONEKSI DATABASE
-// ==============================================================
-
 try {
     db();
-
 } catch (Throwable $e) {
     error_log('[ZORA database] ' . $e->getMessage());
     http_response_code(500);
@@ -69,12 +55,8 @@ try {
     exit;
 }
 
-
-// ==============================================================
 // BAGIAN 4: MEMBACA ALAMAT URL
-// ==============================================================
 // Contoh URL: index.php?url=admin/products/edit/5
-//
 // Maka bagian-bagiannya:
 //   bagian1 = admin
 //   bagian2 = products
@@ -128,13 +110,9 @@ if ($bagian1 === '') {
     $bagian1 = 'home';
 }
 
-
-// ==============================================================
 // BAGIAN 5: MEMERIKSA KEAMANAN ALAMAT
-// ==============================================================
 // Hanya izinkan huruf, angka, tanda hubung, dan garis miring.
 // Ini mencegah alamat berisi karakter aneh atau percobaan path traversal.
-
 if ($alamat !== '') {
     $polaAman = '~^[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*$~';
 
@@ -146,23 +124,15 @@ if ($alamat !== '') {
 }
 
 
-// ==============================================================
 // BAGIAN 6: MENENTUKAN CONTROLLER YANG DIPANGGIL
-// ==============================================================
-
 try {
-
-    // ----------------------------------------------------------
     // HALAMAN BERANDA
-    // ----------------------------------------------------------
     if ($bagian1 === 'home') {
         $controller = new HomeController();
         $controller->index();
     }
 
-    // ----------------------------------------------------------
     // HALAMAN KATALOG PRODUK
-    // ----------------------------------------------------------
     elseif ($bagian1 === 'products') {
         $controller = new ProductController();
 
@@ -175,9 +145,7 @@ try {
         }
     }
 
-    // ----------------------------------------------------------
     // LOGIN, DAFTAR, LOGOUT
-    // ----------------------------------------------------------
     elseif ($bagian1 === 'login') {
         $controller = new AuthController();
         $controller->login();
@@ -193,9 +161,7 @@ try {
         $controller->logout();
     }
 
-    // ----------------------------------------------------------
     // KERANJANG
-    // ----------------------------------------------------------
     elseif ($bagian1 === 'cart') {
         $controller = new CartController();
 
@@ -210,9 +176,7 @@ try {
         }
     }
 
-    // ----------------------------------------------------------
     // CHECKOUT
-    // ----------------------------------------------------------
     elseif ($bagian1 === 'checkout') {
         $controller = new CheckoutController();
 
@@ -223,18 +187,14 @@ try {
         }
     }
 
-    // ----------------------------------------------------------
     // HALAMAN AKUN
-    // ----------------------------------------------------------
     elseif ($bagian1 === 'account') {
         require_login();
 
         render('account/index', ['pageTitle' => 'Akun Saya']);
     }
 
-    // ----------------------------------------------------------
     // RIWAYAT PESANAN
-    // ----------------------------------------------------------
     elseif ($bagian1 === 'orders') {
         $controller = new OrderController();
 
@@ -247,9 +207,7 @@ try {
         }
     }
 
-    // ----------------------------------------------------------
     // HALAMAN ADMIN
-    // ----------------------------------------------------------
     elseif ($bagian1 === 'admin') {
         $controller = new AdminController();
 
@@ -281,9 +239,7 @@ try {
         }
     }
 
-    // ----------------------------------------------------------
     // ALAMAT TIDAK DIKENAL
-    // ----------------------------------------------------------
     else {
         http_response_code(404);
         render('home/not-found', ['pageTitle' => 'Halaman Tidak Ditemukan']);
