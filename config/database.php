@@ -1,45 +1,55 @@
 <?php
 /**
- * Konfigurasi koneksi MySQL untuk ZORA Electronics.
- * File ini bertindak sebagai jembatan tunggal antara PHP dan database MySQL.
+ * KONEKSI DATABASE
+ * ================
+ * File ini menghubungkan aplikasi PHP dengan database MySQL.
+ * Semua file lain yang butuh database cukup memanggil fungsi db().
  */
 
-// Kredensial koneksi database MySQL lokal XAMPP.
-const DB_HOST = '127.0.0.1';
-const DB_NAME = 'zora';
-const DB_USER = 'root';
-const DB_PASS = '';
+// ------------------------------------------------------------
+// 1. Pengaturan database (sesuaikan dengan komputer kamu)
+// ------------------------------------------------------------
+$dbHost = '127.0.0.1';   // lokasi server MySQL
+$dbName = 'zora';        // nama database
+$dbUser = 'root';        // username MySQL (bawaan XAMPP)
+$dbPass = '';            // password MySQL (bawaan XAMPP kosong)
+
 
 /**
- * Menyediakan koneksi PDO tunggal (Reusable / Singleton Pattern sederhana).
- * Menghindari pembukaan banyak koneksi TCP yang membebani memori server.
- *
- * @return PDO Objek koneksi aktif ke MySQL.
+ * db()
+ * ----
+ * Membuka koneksi ke database.
+ * Cara pakai:
+ *     $pdo = db();
+ *     $hasil = $pdo->query("SELECT * FROM products");
  */
-function db(): PDO
+function db()
 {
-    // Variabel statis yang nilainya tetap tersimpan di memori selama satu HTTP request berjalan.
-    static $pdo = null;
+    // Variabel global agar nilai dari luar fungsi bisa dipakai di sini
+    global $dbHost, $dbName, $dbUser, $dbPass;
 
-    // Jika koneksi sudah pernah dibuat sebelumnya, gunakan kembali koneksi yang sama.
-    if ($pdo instanceof PDO) {
-        return $pdo;
+    // Menyimpan koneksi supaya tidak dibuka berulang-ulang
+    static $koneksi = null;
+
+    // Kalau koneksi sudah pernah dibuat, pakai yang itu saja
+    if ($koneksi !== null) {
+        return $koneksi;
     }
 
-    // DSN (Data Source Name): spesifikasi protokol, host, database, dan charset.
-    $dsn = 'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4';
+    // Alamat lengkap server database
+    $alamat = 'mysql:host=' . $dbHost . ';dbname=' . $dbName . ';charset=utf8mb4';
 
-    // Inisialisasi PDO dengan pengaturan keamanan dan performa terbaik.
-    $pdo = new PDO($dsn, DB_USER, DB_PASS, [
-        // Mengubah error database menjadi Exception agar bisa ditangkap blok try-catch.
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    // Membuat koneksi baru dengan PDO
+    $koneksi = new PDO($alamat, $dbUser, $dbPass);
 
-        // Mengembalikan hasil query sebagai array asosiatif (nama_kolom => nilai).
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    // Pengaturan PDO:
+    // - Kalau ada error, langsung dilempar sebagai exception
+    $koneksi->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // - Hasil query berbentuk array dengan nama kolom sebagai kunci
+    $koneksi->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    // - Matikan emulasi supaya prepared statement benar-benar asli dari MySQL
+    //   (ini yang membuat query aman dari SQL Injection)
+    $koneksi->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
 
-        // Mematikan emulasi prepared statement agar dikompilasi secara native oleh MySQL (Anti SQL Injection).
-        PDO::ATTR_EMULATE_PREPARES => false,
-    ]);
-
-    return $pdo;
+    return $koneksi;
 }

@@ -1,46 +1,37 @@
 <?php
-
+/**
+ * CONTROLLER ADMIN
+ * ================
+ * Menangani semua halaman khusus administrator:
+ * dashboard, kelola produk, dan ubah status pesanan.
+ */
 class AdminController
 {
     /**
-     * Dashboard administrator: statistik toko + pesanan terbaru.
+     * Halaman dashboard admin.
      */
-    public function index(): void
+    public function index()
     {
         require_admin();
 
-        $pdo   = db();
-        $stats = [
-            'products'  => (int) $pdo->query(
-                "SELECT COUNT(*) FROM products WHERE status = 'active'"
-            )->fetchColumn(),
+        // Hitung statistik toko
+        $statistik = $this->ambilStatistik();
 
-            'orders'    => (int) $pdo->query(
-                "SELECT COUNT(*) FROM orders"
-            )->fetchColumn(),
-
-            'customers' => (int) $pdo->query(
-                "SELECT COUNT(*) FROM users WHERE role = 'customer'"
-            )->fetchColumn(),
-
-            'revenue'   => (float) $pdo->query(
-                "SELECT COALESCE(SUM(total_amount), 0)
-                 FROM orders
-                 WHERE order_status IN ('confirmed','processing','shipped','completed')"
-            )->fetchColumn(),
-        ];
+        // Ambil 8 pesanan terbaru saja
+        $pesananTerbaru = array_slice(Order::all(), 0, 8);
 
         render('admin/index', [
             'pageTitle' => 'Dashboard Admin',
-            'stats'     => $stats,
-            'orders'    => array_slice(Order::all(), 0, 8),
+            'stats'     => $statistik,
+            'orders'    => $pesananTerbaru,
         ]);
     }
 
+
     /**
-     * Menampilkan daftar produk untuk admin.
+     * Halaman kelola produk: daftar produk + form tambah produk.
      */
-    public function products(): void
+    public function products()
     {
         require_admin();
 
@@ -51,10 +42,11 @@ class AdminController
         ]);
     }
 
+
     /**
-     * Menambahkan produk baru.
+     * Menyimpan produk baru dari form.
      */
-    public function createProduct(): void
+    public function createProduct()
     {
         require_admin();
 
@@ -65,36 +57,22 @@ class AdminController
 
         verify_csrf();
 
-        $categoryInput = $_POST['category_id'] ?? '';
-        $categoryId    = $categoryInput === ''
-            ? null
-            : filter_var($categoryInput, FILTER_VALIDATE_INT);
+        // Susun data produk dari input form
+        $data = $this->ambilInputProduk();
 
-        $data = [
-            'category_id'      => $categoryId,
-            'name'             => trim((string) ($_POST['name'] ?? '')),
-            'sku'              => trim((string) ($_POST['sku'] ?? '')),
-            'description'      => trim((string) ($_POST['description'] ?? '')),
-            'price'            => (float) ($_POST['price'] ?? 0),
-            'compare_at_price' => trim((string) ($_POST['compare_at_price'] ?? '')),
-            'stock'            => max(0, (int) ($_POST['stock'] ?? 0)),
-            'color'            => trim((string) ($_POST['color'] ?? '')),
-            'tag'              => trim((string) ($_POST['tag'] ?? '')),
-            'image_url'        => trim((string) ($_POST['image_url'] ?? '')),
-            'is_featured'      => !empty($_POST['is_featured']),
-        ];
+        // Periksa apakah datanya sudah benar
+        $error = $this->periksaDataProduk($data);
 
-        $errors = $this->validateProductData($data, $categoryInput, $categoryId);
-
-        if ($errors) {
-            flash('error', implode(' ', $errors));
+        if (!empty($error)) {
+            flash('error', implode(' ', $error));
             redirect('admin/products');
-            return; // FIX (M8): tambahkan return setelah redirect agar eksekusi berhenti.
+            return;
         }
 
         try {
             Product::create($data);
             flash('success', 'Produk berhasil ditambahkan.');
+
         } catch (Throwable $e) {
             error_log($e->getMessage());
             flash('error', 'Gagal menyimpan produk. Periksa SKU dan data produk.');
@@ -103,13 +81,11 @@ class AdminController
         redirect('admin/products');
     }
 
+
     /**
-     * Menampilkan formulir edit produk.
-     *
-     * FIX (H6): Method ini sebelumnya ada tapi tidak memiliki route.
-     * Route sudah ditambahkan di public/index.php.
+     * Halaman formulir edit produk.
      */
-    public function editProduct(int $id): void
+    public function editProduct($id)
     {
         require_admin();
 
@@ -119,28 +95,26 @@ class AdminController
             return;
         }
 
-        $product = Product::find($id);
+        $produk = Product::find($id);
 
-        if (!$product) {
+        if ($produk === null) {
             http_response_code(404);
             render('home/not-found', ['pageTitle' => 'Produk tidak ditemukan']);
             return;
         }
 
         render('admin/product-edit', [
-            'pageTitle'  => 'Edit Produk — ' . $product['name'],
-            'product'    => $product,
+            'pageTitle'  => 'Edit Produk — ' . $produk['name'],
+            'product'    => $produk,
             'categories' => Category::all(false),
         ]);
     }
 
+
     /**
-     * Menyimpan perubahan produk (dari form edit).
-     *
-     * FIX (H6): Method ini sebelumnya ada tapi tidak memiliki route.
-     * Route sudah ditambahkan di public/index.php.
+     * Menyimpan perubahan produk dari form edit.
      */
-    public function updateProduct(): void
+    public function updateProduct()
     {
         require_admin();
 
@@ -151,39 +125,22 @@ class AdminController
 
         verify_csrf();
 
-        $id      = (int) ($_POST['product_id'] ?? 0);
-        $product = Product::find($id);
+        $id = (int) post_string('product_id');
+        $produk = Product::find($id);
 
-        if ($id <= 0 || !$product) {
+        if ($id <= 0 || $produk === null) {
             flash('error', 'Produk tidak ditemukan.');
             redirect('admin/products');
             return;
         }
 
-        $categoryInput = $_POST['category_id'] ?? '';
-        $categoryId    = $categoryInput === ''
-            ? null
-            : filter_var($categoryInput, FILTER_VALIDATE_INT);
+        // Susun data produk (termasuk status karena ini proses edit)
+        $data = $this->ambilInputProduk(true);
 
-        $data = [
-            'category_id'      => $categoryId,
-            'name'             => trim((string) ($_POST['name'] ?? '')),
-            'sku'              => trim((string) ($_POST['sku'] ?? '')),
-            'description'      => trim((string) ($_POST['description'] ?? '')),
-            'price'            => (float) ($_POST['price'] ?? 0),
-            'compare_at_price' => trim((string) ($_POST['compare_at_price'] ?? '')),
-            'stock'            => max(0, (int) ($_POST['stock'] ?? 0)),
-            'color'            => trim((string) ($_POST['color'] ?? '')),
-            'tag'              => trim((string) ($_POST['tag'] ?? '')),
-            'image_url'        => trim((string) ($_POST['image_url'] ?? '')),
-            'status'           => $_POST['status'] ?? 'active',
-            'is_featured'      => !empty($_POST['is_featured']),
-        ];
+        $error = $this->periksaDataProduk($data);
 
-        $errors = $this->validateProductData($data, $categoryInput, $categoryId, true);
-
-        if ($errors) {
-            flash('error', implode(' ', $errors));
+        if (!empty($error)) {
+            flash('error', implode(' ', $error));
             redirect('admin/products/edit/' . $id);
             return;
         }
@@ -192,6 +149,7 @@ class AdminController
             Product::update($id, $data);
             flash('success', 'Produk berhasil diperbarui.');
             redirect('admin/products');
+
         } catch (Throwable $e) {
             error_log($e->getMessage());
             flash('error', 'Gagal memperbarui produk. Periksa SKU dan kategori.');
@@ -199,10 +157,11 @@ class AdminController
         }
     }
 
+
     /**
-     * Mengarsipkan produk (soft-delete).
+     * Mengarsipkan produk.
      */
-    public function deleteProduct(): void
+    public function deleteProduct()
     {
         require_admin();
 
@@ -213,9 +172,9 @@ class AdminController
 
         verify_csrf();
 
-        $id = (int) ($_POST['product_id'] ?? 0);
+        $id = (int) post_string('product_id');
 
-        if ($id <= 0 || !Product::find($id)) {
+        if ($id <= 0 || Product::find($id) === null) {
             flash('error', 'Produk tidak ditemukan.');
             redirect('admin/products');
             return;
@@ -224,6 +183,7 @@ class AdminController
         try {
             Product::delete($id);
             flash('success', 'Produk berhasil diarsipkan.');
+
         } catch (Throwable $e) {
             error_log($e->getMessage());
             flash('error', 'Gagal mengarsipkan produk.');
@@ -232,10 +192,11 @@ class AdminController
         redirect('admin/products');
     }
 
+
     /**
-     * Membatalkan arsip produk (mengaktifkan kembali produk ke katalog penjualan).
+     * Mengaktifkan kembali produk yang sudah diarsipkan.
      */
-    public function restoreProduct(): void
+    public function restoreProduct()
     {
         require_admin();
 
@@ -246,9 +207,9 @@ class AdminController
 
         verify_csrf();
 
-        $id = (int) ($_POST['product_id'] ?? 0);
+        $id = (int) post_string('product_id');
 
-        if ($id <= 0 || !Product::find($id)) {
+        if ($id <= 0 || Product::find($id) === null) {
             flash('error', 'Produk tidak ditemukan.');
             redirect('admin/products');
             return;
@@ -257,6 +218,7 @@ class AdminController
         try {
             Product::restore($id);
             flash('success', 'Produk berhasil diaktifkan kembali dan kini tampil di katalog.');
+
         } catch (Throwable $e) {
             error_log($e->getMessage());
             flash('error', 'Gagal mengaktifkan kembali produk.');
@@ -265,18 +227,11 @@ class AdminController
         redirect('admin/products');
     }
 
+
     /**
-     * Memperbarui status pesanan.
-     *
-     * SECURITY FIX (H7): Sebelumnya $e->getMessage() langsung dikirim ke
-     * flash('error') yang ditampilkan ke user — berpotensi information
-     * disclosure (nama tabel, query SQL, dsb.).
-     *
-     * FIX: Exception di-log ke server, user hanya menerima pesan generik
-     * kecuali untuk pesan yang sudah disanitasi (InvalidArgumentException
-     * dengan pesan yang aman).
+     * Mengubah status sebuah pesanan.
      */
-    public function updateOrderStatus(): void
+    public function updateOrderStatus()
     {
         require_admin();
 
@@ -287,8 +242,8 @@ class AdminController
 
         verify_csrf();
 
-        $orderId = (int) ($_POST['order_id'] ?? 0);
-        $status  = (string) ($_POST['status'] ?? '');
+        $orderId = (int) post_string('order_id');
+        $status = post_string('status');
 
         try {
             if ($orderId <= 0) {
@@ -300,90 +255,183 @@ class AdminController
             flash('success', 'Status pesanan berhasil diperbarui.');
 
         } catch (InvalidArgumentException $e) {
-            // Pesan ini aman untuk ditampilkan ke admin.
+            // Pesan ini memang dibuat untuk dibaca admin
             flash('error', $e->getMessage());
 
         } catch (RuntimeException $e) {
-            // Pesan runtime dari Order::updateStatus juga aman (sudah disanitasi di model).
+            // Pesan ini juga aman ditampilkan (misalnya "Pesanan tidak ditemukan")
             flash('error', $e->getMessage());
 
         } catch (Throwable $e) {
-            // Exception lain: log detail, tampilkan pesan generik.
-            error_log('[Admin] updateOrderStatus error: ' . $e->getMessage());
+            // Kesalahan teknis: simpan detailnya di log,
+            // pengguna cukup melihat pesan umum
+            error_log('[Admin] updateOrderStatus: ' . $e->getMessage());
             flash('error', 'Terjadi kesalahan saat memperbarui status pesanan.');
         }
 
         redirect('admin');
     }
 
+
     /**
-     * Validasi data produk (digunakan oleh createProduct dan updateProduct).
-     *
-     * @param array      $data          Data produk yang sudah di-sanitasi.
-     * @param string     $categoryInput Input kategori mentah dari POST.
-     * @param int|false|null $categoryId ID kategori setelah filter_var.
-     * @param bool       $isUpdate      True jika sedang melakukan update (ada field tambahan).
-     * @return array                    Daftar pesan error (kosong jika valid).
+     * Menghitung statistik untuk dashboard admin.
      */
-    private function validateProductData(
-        array          $data,
-        string         $categoryInput,
-        int|false|null $categoryId,
-        bool           $isUpdate = false
-    ): array {
-        $errors = [];
+    private function ambilStatistik()
+    {
+        $pdo = db();
 
+        // Jumlah produk yang masih aktif dijual
+        $sqlProduk = "SELECT COUNT(*) FROM products WHERE status = 'active'";
+        $jumlahProduk = (int) $pdo->query($sqlProduk)->fetchColumn();
+
+        // Jumlah seluruh pesanan
+        $sqlPesanan = "SELECT COUNT(*) FROM orders";
+        $jumlahPesanan = (int) $pdo->query($sqlPesanan)->fetchColumn();
+
+        // Jumlah pelanggan (bukan admin)
+        $sqlPelanggan = "SELECT COUNT(*) FROM users WHERE role = 'customer'";
+        $jumlahPelanggan = (int) $pdo->query($sqlPelanggan)->fetchColumn();
+
+        // Total omzet dari pesanan yang sudah masuk proses
+        $sqlOmzet = "SELECT COALESCE(SUM(total_amount), 0)
+                     FROM orders
+                     WHERE order_status IN ('confirmed', 'processing', 'shipped', 'completed')";
+        $omzet = (float) $pdo->query($sqlOmzet)->fetchColumn();
+
+        return [
+            'products'  => $jumlahProduk,
+            'orders'    => $jumlahPesanan,
+            'customers' => $jumlahPelanggan,
+            'revenue'   => $omzet,
+        ];
+    }
+
+
+    /**
+     * Mengambil data produk dari input form.
+     *
+     * $pakaiStatus = true hanya dipakai saat mengedit produk,
+     * karena form tambah produk selalu berstatus "active".
+     */
+    private function ambilInputProduk($pakaiStatus = false)
+    {
+        // Kategori dari dropdown. Kosong berarti produk tanpa kategori.
+        $categoryId = null;
+        $kategoriInput = post_string('category_id');
+
+        if ($kategoriInput !== '') {
+            $categoryId = (int) $kategoriInput;
+        }
+
+        // Harga pembanding boleh dikosongkan
+        $compareAtPrice = null;
+        $hargaBanding = post_string('compare_at_price');
+
+        if ($hargaBanding !== '') {
+            $compareAtPrice = $hargaBanding;
+        }
+
+        // Tag boleh dikosongkan
+        $tag = null;
+        $tagInput = post_string('tag');
+
+        if ($tagInput !== '') {
+            $tag = $tagInput;
+        }
+
+        // Stok tidak boleh kurang dari 0
+        $stock = (int) post_string('stock');
+
+        if ($stock < 0) {
+            $stock = 0;
+        }
+
+        // Produk unggulan: 1 kalau dicentang, 0 kalau tidak
+        $isFeatured = 0;
+
+        if (!empty($_POST['is_featured'])) {
+            $isFeatured = 1;
+        }
+
+        // Status hanya diambil saat mengedit produk
+        $status = 'active';
+
+        if ($pakaiStatus === true) {
+            $status = post_string('status', 'active');
+        }
+
+        return [
+            'category_id'      => $categoryId,
+            'name'             => post_string('name'),
+            'sku'              => post_string('sku'),
+            'description'      => post_string('description'),
+            'price'            => (float) post_string('price'),
+            'compare_at_price' => $compareAtPrice,
+            'stock'            => $stock,
+            'color'            => post_string('color'),
+            'tag'              => $tag,
+            'image_url'        => post_string('image_url'),
+            'status'           => $status,
+            'is_featured'      => $isFeatured,
+        ];
+    }
+
+
+    /**
+     * Memeriksa apakah data produk sudah lengkap dan benar.
+     * Mengembalikan daftar pesan error (kosong kalau semuanya valid).
+     */
+    private function periksaDataProduk($data)
+    {
+        $error = [];
+
+        // Nama wajib diisi
         if (!required_value($data['name'])) {
-            $errors[] = 'Nama produk wajib diisi.';
+            $error[] = 'Nama produk wajib diisi.';
         }
 
+        // SKU wajib diisi
         if (!required_value($data['sku'])) {
-            $errors[] = 'SKU wajib diisi.';
+            $error[] = 'SKU wajib diisi.';
         }
 
+        // Harga harus lebih dari nol
         if ($data['price'] <= 0) {
-            $errors[] = 'Harga produk harus lebih dari nol.';
+            $error[] = 'Harga produk harus lebih dari nol.';
         }
 
-        if (
-            $data['compare_at_price'] !== '' &&
-            (!is_numeric($data['compare_at_price']) || (float) $data['compare_at_price'] < 0)
-        ) {
-            $errors[] = 'Harga pembanding tidak valid.';
-        }
+        // Harga pembanding, kalau diisi, harus berupa angka yang wajar
+        if ($data['compare_at_price'] !== null) {
+            $angkaValid = is_numeric($data['compare_at_price']);
 
-        if ($categoryInput !== '' && ($categoryId === false || !Category::find((int) $categoryId))) {
-            $errors[] = 'Kategori produk tidak valid.';
-        }
-
-        if ($data['image_url'] !== '' && !$this->validImageUrl($data['image_url'])) {
-            $errors[] = 'URL gambar tidak valid.';
-        }
-
-        if ($isUpdate) {
-            $allowedStatus = ['active', 'draft', 'archived'];
-            if (!in_array($data['status'], $allowedStatus, true)) {
-                $errors[] = 'Status produk tidak valid.';
+            if ($angkaValid === false || (float) $data['compare_at_price'] < 0) {
+                $error[] = 'Harga pembanding tidak valid.';
             }
         }
 
-        return $errors;
-    }
+        // Kalau kategori dipilih, pastikan kategorinya benar-benar ada
+        if ($data['category_id'] !== null) {
+            $kategori = Category::find((int) $data['category_id']);
 
-    /**
-     * Memvalidasi bahwa URL gambar menggunakan skema http atau https.
-     *
-     * @param string $url
-     * @return bool
-     */
-    private function validImageUrl(string $url): bool
-    {
-        if (!filter_var($url, FILTER_VALIDATE_URL)) {
-            return false;
+            if ($kategori === null) {
+                $error[] = 'Kategori produk tidak valid.';
+            }
         }
 
-        $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
+        // URL gambar, kalau diisi, harus berupa alamat http atau https
+        if ($data['image_url'] !== '') {
+            if (!valid_image_url($data['image_url'])) {
+                $error[] = 'URL gambar tidak valid.';
+            }
+        }
 
-        return in_array($scheme, ['http', 'https'], true);
+        // Status produk harus salah satu dari daftar yang diperbolehkan
+        $statusValid = ['active', 'draft', 'archived'];
+
+        if (!in_array($data['status'], $statusValid, true)) {
+            $error[] = 'Status produk tidak valid.';
+        }
+
+        return $error;
     }
 }

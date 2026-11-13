@@ -1,11 +1,43 @@
 <?php
-$cartCount = class_exists('Cart') ? Cart::count() : 0;
-$success   = flash('success');
-$error     = flash('error');
+/**
+ * HEADER HALAMAN
+ * ==============
+ * Bagian atas setiap halaman: judul, CSS, dan navbar.
+ * File ini otomatis dipakai oleh fungsi render().
+ */
 
-// Meta description per halaman: controller bisa pass $metaDescription
-$metaDescription = $metaDescription
-    ?? 'ZORA — pilihan elektronik untuk keseharian, dengan pengalaman belanja yang sederhana.';
+// Hitung jumlah barang di keranjang untuk angka di navbar
+$cartCount = 0;
+
+if (class_exists('Cart')) {
+    $cartCount = Cart::count();
+}
+
+// Ambil pesan yang tersimpan dari halaman sebelumnya
+$success = flash('success');
+$error = flash('error');
+
+// Deskripsi halaman untuk mesin pencari
+// Controller bisa mengirim $metaDescription sendiri kalau perlu
+if (!isset($metaDescription)) {
+    $metaDescription = 'ZORA — pilihan elektronik untuk keseharian, dengan pengalaman belanja yang sederhana.';
+}
+
+// Judul tab browser
+$judulHalaman = 'ZORA Electronics';
+
+if (isset($pageTitle)) {
+    $judulHalaman = $pageTitle;
+}
+
+// Waktu perubahan file CSS, dipakai supaya browser selalu ambil versi terbaru
+$lokasiStyle = __DIR__ . '/../../../public/assets/css/style.css';
+$lokasiResponsive = __DIR__ . '/../../../public/assets/css/responsive.css';
+$lokasiAdmin = __DIR__ . '/../../../public/assets/css/admin.css';
+
+$versiStyle = is_file($lokasiStyle) ? filemtime($lokasiStyle) : time();
+$versiResponsive = is_file($lokasiResponsive) ? filemtime($lokasiResponsive) : time();
+$versiAdmin = is_file($lokasiAdmin) ? filemtime($lokasiAdmin) : time();
 ?>
 <!doctype html>
 <html lang="id">
@@ -13,13 +45,12 @@ $metaDescription = $metaDescription
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title><?= e($pageTitle ?? 'ZORA Electronics') ?> — ZORA</title>
+    <title><?= e($judulHalaman) ?> — ZORA</title>
 
-    <!-- FIX (L1): Meta description kini bisa di-override per halaman -->
     <meta name="description" content="<?= e($metaDescription) ?>">
     <meta name="robots" content="index, follow">
 
-    <!-- Google Fonts preconnect -->
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -27,17 +58,15 @@ $metaDescription = $metaDescription
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- FIX (M5/L14): Bootstrap Icons dipindahkan ke <link> tag, bukan @import di CSS.
-         @import dalam CSS memaksa browser melakukan request seri (lambat).
-         <link> memungkinkan parallel request (lebih cepat). -->
+    <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
-    <!-- ZORA CSS dengan cache-buster otomatis agar setiap perubahan CSS langsung aktif di browser -->
-    <link href="<?= asset('css/style.css') ?>?v=<?= file_exists(__DIR__ . '/../../../public/assets/css/style.css') ? filemtime(__DIR__ . '/../../../public/assets/css/style.css') : time() ?>" rel="stylesheet">
-    <link href="<?= asset('css/responsive.css') ?>?v=<?= file_exists(__DIR__ . '/../../../public/assets/css/responsive.css') ? filemtime(__DIR__ . '/../../../public/assets/css/responsive.css') : time() ?>" rel="stylesheet">
+    <!-- CSS ZORA -->
+    <link href="<?= asset('css/style.css') ?>?v=<?= $versiStyle ?>" rel="stylesheet">
+    <link href="<?= asset('css/responsive.css') ?>?v=<?= $versiResponsive ?>" rel="stylesheet">
 
     <?php if (is_admin()): ?>
-        <link href="<?= asset('css/admin.css') ?>?v=<?= file_exists(__DIR__ . '/../../../public/assets/css/admin.css') ? filemtime(__DIR__ . '/../../../public/assets/css/admin.css') : time() ?>" rel="stylesheet">
+        <link href="<?= asset('css/admin.css') ?>?v=<?= $versiAdmin ?>" rel="stylesheet">
     <?php endif; ?>
 </head>
 <body>
@@ -46,6 +75,7 @@ $metaDescription = $metaDescription
 
 <main class="site-main">
     <div class="container">
+
         <?php if ($success): ?>
             <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
                 <?= e($success) ?>
@@ -59,4 +89,5 @@ $metaDescription = $metaDescription
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
             </div>
         <?php endif; ?>
+
     </div>

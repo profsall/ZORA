@@ -1,84 +1,137 @@
 <?php
 /**
- * Model User: Mengelola data pengguna (pelanggan dan administrator).
- * Menangani pencarian profil, registrasi akun baru, dan proses autentikasi (login).
+ * MODEL PENGGUNA
+ * ==============
+ * Mengelola data tabel "users".
+ * Dipakai untuk daftar akun, login, dan profil.
  */
 class User
 {
     /**
-     * Mencari data pengguna berdasarkan alamat email (case-insensitive).
+     * Mencari pengguna berdasarkan email.
+     * Hasilnya null kalau email tidak terdaftar.
      */
-    public static function findByEmail(string $email): ?array
+    public static function findByEmail($email)
     {
-        $stmt = db()->prepare('SELECT * FROM users WHERE email = ? LIMIT 1');
-        $stmt->execute([strtolower(trim($email))]);
-        return $stmt->fetch() ?: null;
-    }
+        $pdo = db();
 
-    /**
-     * Mengambil data profil publik pengguna berdasarkan ID (tanpa menyertakan password hash).
-     */
-    public static function find(int $id): ?array
-    {
-        $stmt = db()->prepare(
-            'SELECT id, name, email, phone, role, status, created_at
-             FROM users
-             WHERE id = ?'
-        );
-        $stmt->execute([$id]);
-        return $stmt->fetch() ?: null;
-    }
+        $email = strtolower(trim($email));
 
-    /**
-     * Mendaftarkan pengguna baru dengan peran default 'customer'.
-     * Password selalu dienkripsi satu arah menggunakan bcrypt (password_hash).
-     */
-    public static function create(array $data): int
-    {
-        $stmt = db()->prepare(
-            "INSERT INTO users (name, email, phone, password, role, status)
-             VALUES (?, ?, ?, ?, 'customer', 'active')"
-        );
+        $sql = "SELECT * FROM users WHERE email = :email LIMIT 1";
+        $query = $pdo->prepare($sql);
+        $query->execute(['email' => $email]);
 
-        $stmt->execute([
-            $data['name'],
-            strtolower($data['email']),
-            $data['phone'] ?: null,
-            // Hashing password menggunakan algoritma default yang aman (BCrypt/Argon2).
-            password_hash($data['password'], PASSWORD_DEFAULT),
-        ]);
+        $hasil = $query->fetch();
 
-        return (int) db()->lastInsertId();
-    }
-
-    /**
-     * Memverifikasi kredensial login (email dan password).
-     * Jika valid dan akun aktif, perbarui last_login_at dan kembalikan data user tanpa hash password.
-     */
-    public static function authenticate(string $email, string $password): ?array
-    {
-        $user = self::findByEmail($email);
-
-        // Periksa keberadaan user, status akun, dan validitas password via password_verify.
-        if (!$user || $user['status'] !== 'active' || !password_verify($password, $user['password'])) {
+        if ($hasil === false) {
             return null;
         }
 
-        // Catat waktu login terakhir untuk audit aktivitas.
-        db()->prepare('UPDATE users SET last_login_at = NOW() WHERE id = ?')->execute([$user['id']]);
-
-        // Hapus hash password sebelum disimpan ke dalam session browser demi keamanan.
-        unset($user['password']);
-
-        return $user;
+        return $hasil;
     }
 
+
     /**
-     * Memperbarui informasi nama dan nomor telepon pengguna.
+     * Mengambil data pengguna berdasarkan ID.
+     * Password (hash) sengaja tidak diambil demi keamanan.
      */
-    public static function updateProfile(int $id, string $name, string $phone): void
+    public static function find($id)
     {
-        $stmt = db()->prepare('UPDATE users SET name = ?, phone = ? WHERE id = ?');
-        $stmt->execute([$name, $phone ?: null, $id]);
+        $pdo = db();
+
+        $sql = "SELECT id, name, email, phone, role, status, created_at
+                FROM users
+                WHERE id = :id
+                LIMIT 1";
+
+        $query = $pdo->prepare($sql);
+        $query->execute(['id' => $id]);
+
+        $hasil = $query->fetch();
+
+        if ($hasil === false) {
+            return null;
+        }
+
+        return $hasil;
+    }
+
+
+    /**
+     * Mendaftarkan pengguna baru.
+     * Role selalu "customer" dan status "active".
+     *
+     * Password diubah dulu menjadi hash memakai password_hash(),
+     * jadi password asli tidak pernah tersimpan di database.
+     */
+    public static function create($nama, $email, $telepon, $password)
+    {
+        $pdo = db();
+
+        $sql = "INSERT INTO users (name, email, phone, password, role, status)
+                VALUES (:nama, :email, :telepon, :password, 'customer', 'active')";
+
+        $query = $pdo->prepare($sql);
+        $query->execute([
+            'nama'     => $nama,
+            'email'    => strtolower($email),
+            'telepon'  => $telepon,
+            'password' => password_hash($password, PASSWORD_DEFAULT),
+        ]);
+
+        return (int) $pdo->lastInsertId();
+    }
+
+
+    /**
+     * Memeriksa email dan password saat login.
+     *
+     * Hasilnya data pengguna kalau berhasil, atau null kalau gagal.
+     */
+    public static function authenticate($email, $password)
+    {
+        $pengguna = self::findByEmail($email);
+
+        // Kalau email tidak terdaftar, login gagal
+        if ($pengguna === null) {
+            return null;
+        }
+
+        // Kalau akun tidak aktif, login gagal
+        if ($pengguna['status'] !== 'active') {
+            return null;
+        }
+
+        // Cocokkan password yang diketik dengan hash di database
+        if (!password_verify($password, $pengguna['password'])) {
+            return null;
+        }
+
+        // Catat waktu login terakhir
+        $pdo = db();
+        $sql = "UPDATE users SET last_login_at = NOW() WHERE id = :id";
+        $pdo->prepare($sql)->execute(['id' => $pengguna['id']]);
+
+        // Hapus hash password sebelum disimpan ke session
+        unset($pengguna['password']);
+
+        return $pengguna;
+    }
+
+
+    /**
+     * Memperbarui nama dan nomor telepon pengguna.
+     */
+    public static function updateProfile($id, $nama, $telepon)
+    {
+        $pdo = db();
+
+        $sql = "UPDATE users SET name = :nama, phone = :telepon WHERE id = :id";
+        $query = $pdo->prepare($sql);
+        $query->execute([
+            'nama'    => $nama,
+            'telepon' => $telepon,
+            'id'      => $id,
+        ]);
     }
 }

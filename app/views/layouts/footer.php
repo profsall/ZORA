@@ -1,3 +1,10 @@
+<?php
+/**
+ * FOOTER HALAMAN
+ * ==============
+ * Bagian bawah setiap halaman: footer dan file JavaScript.
+ */
+?>
 </main>
 
 <footer class="site-footer">
@@ -20,10 +27,7 @@
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- FIX (M4): Tambahkan defer pada semua script agar tidak memblokir rendering HTML. -->
-<!-- FIX (M3): main.js di-load di semua halaman (wajar untuk interaksi global),
-     sedangkan cart.js, filter.js, checkout.js hanya relevan di halaman tertentu.
-     Dengan 'defer' ketiganya di-parse setelah HTML, overhead minimal. -->
+<!-- JavaScript ZORA -->
 <script src="<?= asset('js/main.js') ?>" defer></script>
 <script src="<?= asset('js/cart.js') ?>" defer></script>
 <script src="<?= asset('js/filter.js') ?>" defer></script>

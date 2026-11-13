@@ -1,45 +1,43 @@
 <?php
 /**
- * Controller Checkout: Menangani proses verifikasi akhir keranjang belanja,
- * pengisian data pengiriman, pemilihan metode bayar, dan penerbitan pesanan.
+ * CONTROLLER CHECKOUT
+ * ===================
+ * Menangani halaman checkout dan proses pembuatan pesanan.
  */
 class CheckoutController
 {
     /**
      * Menampilkan halaman formulir checkout.
-     * Mewajibkan login dan memastikan keranjang belanja tidak kosong.
      */
-    public function index(): void
+    public function index()
     {
-        // Hanya pengguna yang sudah terdaftar dan login yang boleh checkout.
+        // Hanya pengguna yang sudah login yang boleh checkout
         require_login();
 
-        $items = Cart::items();
+        $daftarBarang = Cart::items();
 
-        // Jika keranjang kosong, kembalikan pengunjung ke halaman katalog produk.
-        if (!$items) {
+        // Keranjang kosong tidak bisa checkout
+        if (empty($daftarBarang)) {
             flash('error', 'Keranjang masih kosong.');
             redirect('products');
         }
 
         $subtotal = Cart::subtotal();
-
-        // Aturan ongkir: Gratis ongkir jika belanja minimal Rp 500.000, selain itu Rp 15.000.
-        $shippingCost = $subtotal >= 500000 ? 0 : 15000;
+        $ongkir = hitung_ongkir($subtotal);
 
         render('checkout/index', [
             'pageTitle'    => 'Checkout',
-            'items'        => $items,
+            'items'        => $daftarBarang,
             'subtotal'     => $subtotal,
-            'shippingCost' => $shippingCost,
+            'shippingCost' => $ongkir,
         ]);
     }
 
+
     /**
-     * Memproses pesanan dari formulir checkout (Metode POST).
-     * Melakukan validasi alamat, metode bayar, pengurangan stok, dan pencatatan transaksi.
+     * Memproses formulir checkout menjadi pesanan.
      */
-    public function store(): void
+    public function store()
     {
         require_login();
 
@@ -50,97 +48,116 @@ class CheckoutController
 
         verify_csrf();
 
-        $errors = [];
+        $error = [];
 
-        // Kumpulkan data pengiriman dari form input.
-        $shipping = [
-            'recipient_name'  => $this->postString('recipient_name'),
-            'recipient_phone' => $this->postString('recipient_phone'),
-            'address'         => $this->postString('address'),
-            'city'            => $this->postString('city'),
-            'province'        => $this->postString('province'),
-            'postal_code'     => $this->postString('postal_code'),
-            'note'            => $this->postString('note'),
+        // ------------------------------------------------------------
+        // Kumpulkan data pengiriman dari form
+        // ------------------------------------------------------------
+        $pengiriman = [
+            'recipient_name'  => post_string('recipient_name'),
+            'recipient_phone' => post_string('recipient_phone'),
+            'address'         => post_string('address'),
+            'city'            => post_string('city'),
+            'province'        => post_string('province'),
+            'postal_code'     => post_string('postal_code'),
+            'note'            => post_string('note'),
         ];
 
-        // Validasi kolom penerima wajib.
-        $requiredFields = ['recipient_name', 'recipient_phone', 'address', 'city'];
-        foreach ($requiredFields as $field) {
-            if (!required_value($shipping[$field])) {
-                $errors[] = 'Nama penerima, nomor telepon, alamat, dan kota wajib diisi.';
-                break;
+        // ------------------------------------------------------------
+        // Validasi: kolom wajib
+        // ------------------------------------------------------------
+        $kolomWajib = ['recipient_name', 'recipient_phone', 'address', 'city'];
+        $adaYangKosong = false;
+
+        foreach ($kolomWajib as $kolom) {
+            if (!required_value($pengiriman[$kolom])) {
+                $adaYangKosong = true;
             }
         }
 
-        // Validasi format nomor telepon Indonesia.
-        if ($shipping['recipient_phone'] !== '' && !preg_match('/^[0-9+\-\s]{8,20}$/', $shipping['recipient_phone'])) {
-            $errors[] = 'Nomor telepon tidak valid.';
+        if ($adaYangKosong === true) {
+            $error[] = 'Nama penerima, nomor telepon, alamat, dan kota wajib diisi.';
         }
 
-        // Whitelist opsi metode pembayaran yang didukung sistem.
-        $paymentMethod = $this->postString('payment_method', 'bank_transfer');
-        $allowedPaymentMethods = ['bank_transfer', 'qris', 'ewallet', 'cod'];
-        if (!in_array($paymentMethod, $allowedPaymentMethods, true)) {
-            $errors[] = 'Metode pembayaran tidak valid.';
+        // ------------------------------------------------------------
+        // Validasi: format nomor telepon
+        // ------------------------------------------------------------
+        if ($pengiriman['recipient_phone'] !== '') {
+            $polaTelepon = '/^[0-9+\-\s]{8,20}$/';
+
+            if (!preg_match($polaTelepon, $pengiriman['recipient_phone'])) {
+                $error[] = 'Nomor telepon tidak valid.';
+            }
         }
 
-        $items    = Cart::items();
+        // ------------------------------------------------------------
+        // Validasi: metode pembayaran
+        // ------------------------------------------------------------
+        $metodeBayar = post_string('payment_method', 'bank_transfer');
+        $metodeValid = ['bank_transfer', 'qris', 'ewallet', 'cod'];
+
+        if (!in_array($metodeBayar, $metodeValid, true)) {
+            $error[] = 'Metode pembayaran tidak valid.';
+        }
+
+        // ------------------------------------------------------------
+        // Siapkan data barang dan hitung total
+        // ------------------------------------------------------------
+        $daftarBarang = Cart::items();
         $subtotal = Cart::subtotal();
-        $shippingCost = $subtotal >= 500000 ? 0 : 15000;
+        $ongkir = hitung_ongkir($subtotal);
 
-        if (!$items) {
+        // Keranjang kosong
+        if (empty($daftarBarang)) {
             flash('error', 'Keranjang masih kosong.');
             redirect('products');
         }
 
-        // Jika terjadi kesalahan input, kembalikan ke form checkout dengan pesan error.
-        if ($errors) {
+        // ------------------------------------------------------------
+        // Kalau ada kesalahan, tampilkan kembali form beserta pesannya
+        // ------------------------------------------------------------
+        if (!empty($error)) {
             render('checkout/index', [
                 'pageTitle'    => 'Checkout',
-                'items'        => $items,
+                'items'        => $daftarBarang,
                 'subtotal'     => $subtotal,
-                'shippingCost' => $shippingCost,
-                'errors'       => array_unique($errors),
+                'shippingCost' => $ongkir,
+                'errors'       => array_unique($error),
             ]);
             return;
         }
 
+        // ------------------------------------------------------------
+        // Semua valid, buat pesanan
+        // ------------------------------------------------------------
         try {
             $userId = (int) current_user()['id'];
 
-            // Eksekusi transaksi database: insert pesanan, kunci & kurangi stok, dan kosongkan keranjang.
-            $orderId = Order::createFromCart($userId, $shipping, $paymentMethod);
+            $orderId = Order::createFromCart($userId, $pengiriman, $metodeBayar);
 
-            $order = Order::findForUser($orderId, $userId);
-            if (!$order) {
+            $pesanan = Order::findForUser($orderId, $userId);
+
+            if ($pesanan === null) {
                 throw new RuntimeException('Pesanan tidak ditemukan setelah dibuat.');
             }
 
-            // Tampilkan halaman konfirmasi pesanan berhasil.
             render('checkout/success', [
                 'pageTitle' => 'Pesanan Berhasil',
-                'order'     => $order,
+                'order'     => $pesanan,
             ]);
 
         } catch (RuntimeException $e) {
-            // Error bisnis (misal stok habis mendadak).
+            // Kesalahan yang memang bisa terjadi, misalnya stok habis.
+            // Pesannya aman untuk ditampilkan ke pengguna.
             flash('error', $e->getMessage());
             redirect('cart');
 
         } catch (Throwable $e) {
-            // Error teknis server yang tidak terduga.
+            // Kesalahan teknis yang tidak terduga.
+            // Detailnya disimpan di log server, pengguna cukup melihat pesan umum.
             error_log($e->getMessage());
             flash('error', 'Terjadi kesalahan ketika memproses pesanan.');
             redirect('cart');
         }
-    }
-
-    /**
-     * Membaca dan menormalisasi input data POST bertipe string.
-     */
-    private function postString(string $key, string $default = ''): string
-    {
-        $value = $_POST[$key] ?? $default;
-        return is_string($value) ? trim($value) : $default;
     }
 }

@@ -1,224 +1,280 @@
 <?php
-
+/**
+ * MODEL PESANAN
+ * =============
+ * Mengelola tabel "orders" dan "order_items".
+ * Berisi proses paling penting: mengubah isi keranjang menjadi pesanan.
+ */
 class Order
 {
     /**
-     * Membuat pesanan baru dari isi cart aktif.
+     * Membuat pesanan baru dari isi keranjang.
+     * Mengembalikan ID pesanan yang baru dibuat.
      *
-     * BUG FIX (C1/M12): Sebelumnya Cart::clear() dipanggil SETELAH
-     * $pdo->commit(). Jika Cart::clear() gagal, pesanan sudah tersimpan
-     * tapi cart tidak dikosongkan → state inconsistency.
-     *
-     * FIX: Cart::clear() sekarang dipanggil di dalam transaksi menggunakan
-     * PDO yang sama, sehingga jika gagal, seluruh transaksi di-rollback.
-     *
-     * @throws RuntimeException Jika cart kosong atau stok tidak mencukupi.
+     * Semua langkah dijalankan di dalam satu transaksi database.
+     * Artinya: kalau ada satu langkah yang gagal, semua perubahan dibatalkan.
+     * Jadi tidak akan ada pesanan setengah jadi.
      */
-    public static function createFromCart(
-        int    $userId,
-        array  $shipping,
-        string $paymentMethod
-    ): int {
-        $pdo   = db();
-        $items = Cart::items();
+    public static function createFromCart($userId, $pengiriman, $metodeBayar)
+    {
+        $pdo = db();
+        $daftarBarang = Cart::items();
 
-        if (!$items) {
+        // Keranjang kosong tidak bisa di-checkout
+        if (empty($daftarBarang)) {
             throw new RuntimeException('Keranjang masih kosong.');
         }
 
-        $subtotal     = Cart::subtotal();
-        $shippingCost = $subtotal >= 500000 ? 0 : 15000;
-        $total        = $subtotal + $shippingCost;
+        // Hitung total belanja
+        $subtotal = Cart::subtotal();
+        $ongkir = hitung_ongkir($subtotal);
+        $total = $subtotal + $ongkir;
 
+        // Mulai transaksi. Semua perubahan belum permanen sampai commit().
         $pdo->beginTransaction();
 
         try {
-            // 1. Validasi stok setiap item dengan row lock (FOR UPDATE).
-            $checkStmt = $pdo->prepare(
-                "SELECT stock, status
-                 FROM products
-                 WHERE id = ?
-                 FOR UPDATE"
-            );
+            // --------------------------------------------------------
+            // LANGKAH 1: Periksa stok setiap barang
+            // FOR UPDATE mengunci baris produk supaya tidak ada
+            // pengguna lain yang membeli stok yang sama di saat bersamaan.
+            // --------------------------------------------------------
+            $sql = "SELECT stock, status
+                    FROM products
+                    WHERE id = :id
+                    FOR UPDATE";
 
-            foreach ($items as $item) {
-                $checkStmt->execute([$item['product_id']]);
-                $stock = $checkStmt->fetch();
+            $queryStok = $pdo->prepare($sql);
 
-                if (
-                    !$stock ||
-                    $stock['status'] !== 'active' ||
-                    (int) $stock['stock'] < (int) $item['quantity']
-                ) {
-                    throw new RuntimeException(
-                        'Stok ' . $item['name'] . ' tidak mencukupi.'
-                    );
+            foreach ($daftarBarang as $barang) {
+                $queryStok->execute(['id' => $barang['product_id']]);
+                $stokProduk = $queryStok->fetch();
+
+                // Produk sudah tidak ada
+                if ($stokProduk === false) {
+                    throw new RuntimeException('Stok ' . $barang['name'] . ' tidak mencukupi.');
+                }
+
+                // Produk sudah tidak dijual
+                if ($stokProduk['status'] !== 'active') {
+                    throw new RuntimeException('Stok ' . $barang['name'] . ' tidak mencukupi.');
+                }
+
+                // Stok kurang dari yang dipesan
+                if ((int) $stokProduk['stock'] < (int) $barang['quantity']) {
+                    throw new RuntimeException('Stok ' . $barang['name'] . ' tidak mencukupi.');
                 }
             }
 
-            // 2. Buat nomor pesanan unik.
-            $orderNumber = 'ZOR' . date('ymd') . strtoupper(bin2hex(random_bytes(3)));
+            // --------------------------------------------------------
+            // LANGKAH 2: Buat nomor pesanan yang unik
+            // Contoh hasil: ZOR260311A1B2C3
+            // --------------------------------------------------------
+            $nomorPesanan = 'ZOR' . date('ymd') . strtoupper(bin2hex(random_bytes(3)));
 
-            // 3. Insert record pesanan.
-            $insertOrder = $pdo->prepare(
-                "INSERT INTO orders (
-                    order_number, user_id,
-                    recipient_name, recipient_phone,
-                    shipping_address, shipping_city,
-                    shipping_province, shipping_postal_code,
-                    subtotal, shipping_cost, discount_amount,
-                    total_amount, order_status, customer_note
-                ) VALUES (
-                    ?, ?,
-                    ?, ?,
-                    ?, ?,
-                    ?, ?,
-                    ?, ?, 0,
-                    ?, 'pending', ?
-                )"
-            );
-            $insertOrder->execute([
-                $orderNumber,
-                $userId,
-                $shipping['recipient_name'],
-                $shipping['recipient_phone'],
-                $shipping['address'],
-                $shipping['city'],
-                $shipping['province'],
-                $shipping['postal_code'],
-                $subtotal,
-                $shippingCost,
-                $total,
-                $shipping['note'],
+            // --------------------------------------------------------
+            // LANGKAH 3: Simpan data pesanan
+            // --------------------------------------------------------
+            $sql = "INSERT INTO orders (
+                        order_number, user_id,
+                        recipient_name, recipient_phone,
+                        shipping_address, shipping_city,
+                        shipping_province, shipping_postal_code,
+                        subtotal, shipping_cost, discount_amount,
+                        total_amount, order_status, customer_note
+                    ) VALUES (
+                        :nomor_pesanan, :user_id,
+                        :nama_penerima, :telepon_penerima,
+                        :alamat, :kota,
+                        :provinsi, :kode_pos,
+                        :subtotal, :ongkir, 0,
+                        :total, 'pending', :catatan
+                    )";
+
+            $queryOrder = $pdo->prepare($sql);
+            $queryOrder->execute([
+                'nomor_pesanan'   => $nomorPesanan,
+                'user_id'         => $userId,
+                'nama_penerima'   => $pengiriman['recipient_name'],
+                'telepon_penerima' => $pengiriman['recipient_phone'],
+                'alamat'          => $pengiriman['address'],
+                'kota'            => $pengiriman['city'],
+                'provinsi'        => $pengiriman['province'],
+                'kode_pos'        => $pengiriman['postal_code'],
+                'subtotal'        => $subtotal,
+                'ongkir'          => $ongkir,
+                'total'           => $total,
+                'catatan'         => $pengiriman['note'],
             ]);
 
             $orderId = (int) $pdo->lastInsertId();
 
-            // 4. Insert order items dan kurangi stok.
-            $insertItem = $pdo->prepare(
-                "INSERT INTO order_items
-                    (order_id, product_id, product_name, product_sku,
-                     product_image, unit_price, quantity, line_total)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-            );
+            // --------------------------------------------------------
+            // LANGKAH 4: Simpan rincian barang dan kurangi stok
+            //
+            // Nama, SKU, dan gambar disimpan sebagai salinan (snapshot).
+            // Tujuannya: kalau nanti produk diubah admin, riwayat pesanan
+            // lama tetap menampilkan data saat dibeli.
+            // --------------------------------------------------------
+            $sqlItem = "INSERT INTO order_items
+                            (order_id, product_id, product_name, product_sku,
+                             product_image, unit_price, quantity, line_total)
+                        VALUES
+                            (:order_id, :product_id, :nama_produk, :sku_produk,
+                             :gambar_produk, :harga_satuan, :jumlah, :total_baris)";
 
-            $reduceStock = $pdo->prepare(
-                "UPDATE products SET stock = stock - ? WHERE id = ?"
-            );
+            $queryItem = $pdo->prepare($sqlItem);
 
-            foreach ($items as $item) {
-                $lineTotal = (float) $item['unit_price'] * (int) $item['quantity'];
+            $sqlStok = "UPDATE products SET stock = stock - :jumlah WHERE id = :product_id";
+            $queryStokKurang = $pdo->prepare($sqlStok);
 
-                $insertItem->execute([
-                    $orderId,
-                    $item['product_id'],
-                    $item['name'],
-                    $item['sku'] ?? null,
-                    $item['image_url'],
-                    $item['unit_price'],
-                    $item['quantity'],
-                    $lineTotal,
+            foreach ($daftarBarang as $barang) {
+                $totalBaris = (float) $barang['unit_price'] * (int) $barang['quantity'];
+
+                $queryItem->execute([
+                    'order_id'      => $orderId,
+                    'product_id'    => $barang['product_id'],
+                    'nama_produk'   => $barang['name'],
+                    'sku_produk'    => $barang['sku'],
+                    'gambar_produk' => $barang['image_url'],
+                    'harga_satuan'  => $barang['unit_price'],
+                    'jumlah'        => $barang['quantity'],
+                    'total_baris'   => $totalBaris,
                 ]);
 
-                $reduceStock->execute([
-                    $item['quantity'],
-                    $item['product_id'],
+                $queryStokKurang->execute([
+                    'jumlah'     => $barang['quantity'],
+                    'product_id' => $barang['product_id'],
                 ]);
             }
 
-            // 5. Catat pembayaran.
-            Payment::create($orderId, $paymentMethod, $total);
+            // --------------------------------------------------------
+            // LANGKAH 5: Catat data pembayaran
+            // --------------------------------------------------------
+            Payment::create($orderId, $metodeBayar, $total);
 
-            // 6. FIX: Kosongkan cart di DALAM transaksi yang sama,
-            //    dengan meneruskan PDO connection yang sudah di-begin.
-            //    Jika ini gagal, seluruh transaksi akan di-rollback.
+            // --------------------------------------------------------
+            // LANGKAH 6: Kosongkan keranjang
+            // Dilakukan di dalam transaksi yang sama, jadi kalau gagal
+            // seluruh pesanan ikut dibatalkan.
+            // --------------------------------------------------------
             Cart::clear(true, $pdo);
 
-            // 7. Commit seluruh transaksi.
+            // --------------------------------------------------------
+            // LANGKAH 7: Simpan semua perubahan secara permanen
+            // --------------------------------------------------------
             $pdo->commit();
 
             return $orderId;
 
-        } catch (Throwable $e) {
+        } catch (Throwable $error) {
+            // Ada yang gagal, batalkan semua perubahan
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
 
-            throw $e;
+            // Lempar ulang errornya supaya controller bisa menampilkan pesan
+            throw $error;
         }
     }
 
-    /**
-     * Mengambil semua pesanan milik seorang user.
-     */
-    public static function forUser(int $userId): array
-    {
-        $stmt = db()->prepare(
-            "SELECT * FROM orders
-             WHERE user_id = ?
-             ORDER BY ordered_at DESC"
-        );
-        $stmt->execute([$userId]);
 
-        return $stmt->fetchAll();
+    /**
+     * Mengambil semua pesanan milik satu pengguna.
+     */
+    public static function forUser($userId)
+    {
+        $pdo = db();
+
+        $sql = "SELECT * FROM orders
+                WHERE user_id = :user_id
+                ORDER BY ordered_at DESC";
+
+        $query = $pdo->prepare($sql);
+        $query->execute(['user_id' => $userId]);
+
+        return $query->fetchAll();
     }
 
+
     /**
-     * Mengambil semua pesanan (untuk dashboard admin).
+     * Mengambil semua pesanan untuk dashboard admin.
+     * Nama pelanggan ikut diambil dari tabel users.
      */
-    public static function all(): array
+    public static function all()
     {
-        return db()->query(
-            "SELECT o.*, u.name AS customer_name
-             FROM orders o
-             LEFT JOIN users u ON u.id = o.user_id
-             ORDER BY o.ordered_at DESC"
-        )->fetchAll();
+        $pdo = db();
+
+        $sql = "SELECT
+                    o.*,
+                    u.name AS customer_name
+                FROM orders o
+                LEFT JOIN users u ON u.id = o.user_id
+                ORDER BY o.ordered_at DESC";
+
+        $query = $pdo->query($sql);
+        return $query->fetchAll();
     }
 
-    /**
-     * Mengambil detail pesanan milik user tertentu (proteksi IDOR).
-     */
-    public static function findForUser(int $id, int $userId): ?array
-    {
-        $stmt = db()->prepare(
-            "SELECT * FROM orders
-             WHERE id = ? AND user_id = ?"
-        );
-        $stmt->execute([$id, $userId]);
-
-        return $stmt->fetch() ?: null;
-    }
 
     /**
-     * Mengambil semua item dari satu pesanan.
-     */
-    public static function items(int $orderId): array
-    {
-        $stmt = db()->prepare(
-            "SELECT * FROM order_items WHERE order_id = ?"
-        );
-        $stmt->execute([$orderId]);
-
-        return $stmt->fetchAll();
-    }
-
-    /**
-     * Memperbarui status pesanan.
-     * Jika status diubah ke 'cancelled', stok produk dikembalikan.
+     * Mengambil satu pesanan milik pengguna tertentu.
      *
-     * SECURITY FIX (H7): Exception message tidak lagi dikirim langsung
-     * ke user — cukup di-rethrow, dan caller (AdminController) yang
-     * bertanggung jawab menampilkan pesan generik ke user.
-     *
-     * @throws InvalidArgumentException Jika status tidak valid.
-     * @throws RuntimeException         Jika pesanan tidak ditemukan atau tidak bisa diubah.
+     * user_id ikut dipakai di WHERE supaya pengguna tidak bisa
+     * membuka pesanan milik orang lain hanya dengan mengganti ID.
      */
-    public static function updateStatus(int $id, string $status): void
+    public static function findForUser($id, $userId)
     {
-        $allowed = ['confirmed', 'processing', 'shipped', 'completed', 'cancelled'];
+        $pdo = db();
 
-        if (!in_array($status, $allowed, true)) {
+        $sql = "SELECT * FROM orders
+                WHERE id = :id
+                  AND user_id = :user_id
+                LIMIT 1";
+
+        $query = $pdo->prepare($sql);
+        $query->execute([
+            'id'      => $id,
+            'user_id' => $userId,
+        ]);
+
+        $hasil = $query->fetch();
+
+        if ($hasil === false) {
+            return null;
+        }
+
+        return $hasil;
+    }
+
+
+    /**
+     * Mengambil semua barang dari satu pesanan.
+     */
+    public static function items($orderId)
+    {
+        $pdo = db();
+
+        $sql = "SELECT * FROM order_items WHERE order_id = :order_id";
+        $query = $pdo->prepare($sql);
+        $query->execute(['order_id' => $orderId]);
+
+        return $query->fetchAll();
+    }
+
+
+    /**
+     * Mengubah status pesanan.
+     *
+     * Kalau status diubah menjadi "cancelled", stok produk
+     * dikembalikan seperti sebelum pesanan dibuat.
+     */
+    public static function updateStatus($id, $status)
+    {
+        // Status yang diperbolehkan
+        $statusValid = ['confirmed', 'processing', 'shipped', 'completed', 'cancelled'];
+
+        if (!in_array($status, $statusValid, true)) {
             throw new InvalidArgumentException('Status pesanan tidak valid.');
         }
 
@@ -226,52 +282,69 @@ class Order
         $pdo->beginTransaction();
 
         try {
-            $stmt = $pdo->prepare(
-                "SELECT order_status FROM orders WHERE id = ? FOR UPDATE"
-            );
-            $stmt->execute([$id]);
-            $currentStatus = $stmt->fetchColumn();
+            // --------------------------------------------------------
+            // 1. Ambil status pesanan saat ini (sekaligus dikunci)
+            // --------------------------------------------------------
+            $sql = "SELECT order_status FROM orders WHERE id = :id FOR UPDATE";
+            $query = $pdo->prepare($sql);
+            $query->execute(['id' => $id]);
+            $statusSekarang = $query->fetchColumn();
 
-            if ($currentStatus === false) {
+            // Pesanan tidak ditemukan
+            if ($statusSekarang === false) {
                 throw new RuntimeException('Pesanan tidak ditemukan.');
             }
 
-            if ($currentStatus === 'cancelled' && $status !== 'cancelled') {
+            // Pesanan yang sudah dibatalkan tidak bisa diaktifkan lagi
+            if ($statusSekarang === 'cancelled' && $status !== 'cancelled') {
                 throw new RuntimeException(
                     'Pesanan yang sudah dibatalkan tidak dapat diaktifkan kembali.'
                 );
             }
 
-            // Kembalikan stok jika pesanan dibatalkan.
-            if ($status === 'cancelled' && $currentStatus !== 'cancelled') {
-                $itemStmt = $pdo->prepare(
-                    "SELECT product_id, quantity
-                     FROM order_items
-                     WHERE order_id = ? AND product_id IS NOT NULL"
-                );
-                $itemStmt->execute([$id]);
+            // --------------------------------------------------------
+            // 2. Kalau dibatalkan, kembalikan stok produk
+            // --------------------------------------------------------
+            $baruDibatalkan = ($status === 'cancelled' && $statusSekarang !== 'cancelled');
 
-                $restoreStmt = $pdo->prepare(
-                    "UPDATE products SET stock = stock + ? WHERE id = ?"
-                );
+            if ($baruDibatalkan === true) {
+                $sql = "SELECT product_id, quantity
+                        FROM order_items
+                        WHERE order_id = :order_id
+                          AND product_id IS NOT NULL";
 
-                foreach ($itemStmt->fetchAll() as $item) {
-                    $restoreStmt->execute([$item['quantity'], $item['product_id']]);
+                $query = $pdo->prepare($sql);
+                $query->execute(['order_id' => $id]);
+                $daftarBarang = $query->fetchAll();
+
+                $sql = "UPDATE products SET stock = stock + :jumlah WHERE id = :product_id";
+                $queryStok = $pdo->prepare($sql);
+
+                foreach ($daftarBarang as $barang) {
+                    $queryStok->execute([
+                        'jumlah'     => $barang['quantity'],
+                        'product_id' => $barang['product_id'],
+                    ]);
                 }
             }
 
-            $pdo->prepare(
-                "UPDATE orders SET order_status = ? WHERE id = ?"
-            )->execute([$status, $id]);
+            // --------------------------------------------------------
+            // 3. Simpan status baru
+            // --------------------------------------------------------
+            $sql = "UPDATE orders SET order_status = :status WHERE id = :id";
+            $pdo->prepare($sql)->execute([
+                'status' => $status,
+                'id'     => $id,
+            ]);
 
             $pdo->commit();
 
-        } catch (Throwable $e) {
+        } catch (Throwable $error) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
 
-            throw $e;
+            throw $error;
         }
     }
 }

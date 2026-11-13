@@ -1,37 +1,76 @@
 <?php
 /**
- * Helper validasi data input formulir.
- * Memastikan data yang dikirim pengguna memenuhi standar format sebelum diproses oleh model.
+ * FUNGSI VALIDASI INPUT
+ * =====================
+ * Fungsi untuk memeriksa apakah data yang dikirim pengguna
+ * sudah sesuai aturan sebelum disimpan ke database.
  */
 
+
 /**
- * Memvalidasi apakah format string email sesuai standar RFC.
+ * Memeriksa apakah format email sudah benar.
+ *
+ * Contoh benar : budi@gmail.com
+ * Contoh salah : budi@gmail
  */
-function valid_email(string $email): bool
+function valid_email($email)
 {
-    return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+    if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+        return false;
+    }
+
+    return true;
 }
 
+
 /**
- * Memvalidasi panjang minimal password untuk keamanan akun (minimal 8 karakter).
+ * Memeriksa panjang password minimal 8 karakter.
  */
-function valid_password(string $password): bool
+function valid_password($password)
 {
     return strlen($password) >= 8;
 }
 
-/**
- * Memeriksa apakah input wajib telah diisi (tidak boleh string kosong atau spasi saja).
- */
-function required_value(mixed $value): bool
-{
-    return trim((string) $value) !== '';
-}
 
 /**
- * Memvalidasi apakah suatu nilai merupakan bilangan bulat positif (> 0).
+ * Memeriksa apakah input wajib sudah diisi.
+ * Spasi saja dianggap kosong.
  */
-function positive_int(mixed $value): bool
+function required_value($nilai)
 {
-    return filter_var($value, FILTER_VALIDATE_INT) !== false && (int) $value > 0;
+    return trim((string) $nilai) !== '';
+}
+
+
+/**
+ * Memeriksa apakah nilai berupa bilangan bulat positif (lebih dari 0).
+ */
+function positive_int($nilai)
+{
+    if (filter_var($nilai, FILTER_VALIDATE_INT) === false) {
+        return false;
+    }
+
+    return (int) $nilai > 0;
+}
+
+
+/**
+ * Memeriksa apakah URL gambar menggunakan http atau https.
+ */
+function valid_image_url($url)
+{
+    if (filter_var($url, FILTER_VALIDATE_URL) === false) {
+        return false;
+    }
+
+    $skema = parse_url($url, PHP_URL_SCHEME);
+
+    if ($skema === false || $skema === null) {
+        return false;
+    }
+
+    $skema = strtolower($skema);
+
+    return $skema === 'http' || $skema === 'https';
 }

@@ -1,16 +1,25 @@
 <?php
 /**
  * Halaman edit produk admin.
- * View ini dirujuk oleh AdminController::editProduct() namun sebelumnya
- * belum ada file-nya (menyebabkan 500 error jika route dipanggil).
+ * Formulir untuk mengubah data produk yang sudah ada.
  */
-$statusOptions = [
+
+// Status produk yang bisa dipilih
+$pilihanStatus = [
     'active'   => 'Aktif',
     'draft'    => 'Draft',
     'archived' => 'Diarsipkan',
 ];
+
+// Tandai produk sebagai unggulan atau bukan
+$centangUnggulan = '';
+
+if (!empty($product['is_featured'])) {
+    $centangUnggulan = 'checked';
+}
 ?>
 <section class="container standard-page admin-page">
+
     <div class="page-title">
         <span class="eyebrow">ZORA MANAGEMENT</span>
         <h1>Edit produk</h1>
@@ -18,6 +27,7 @@ $statusOptions = [
     </div>
 
     <div class="admin-product-layout" style="max-width:680px">
+
         <form class="form-card" method="post" action="<?= base_url('admin/products/update') ?>">
             <?= csrf_field() ?>
             <input type="hidden" name="product_id" value="<?= (int) $product['id'] ?>">
@@ -33,9 +43,17 @@ $statusOptions = [
             <label>Kategori
                 <select name="category_id">
                     <option value="">Tanpa kategori</option>
+
                     <?php foreach ($categories as $c): ?>
-                        <option value="<?= (int) $c['id'] ?>"
-                            <?= (int) $c['id'] === (int) ($product['category_id'] ?? 0) ? 'selected' : '' ?>>
+                        <?php
+                        // Tandai kategori yang sedang dipakai produk ini
+                        $terpilih = '';
+
+                        if ((int) $c['id'] === (int) ($product['category_id'] ?? 0)) {
+                            $terpilih = 'selected';
+                        }
+                        ?>
+                        <option value="<?= (int) $c['id'] ?>" <?= $terpilih ?>>
                             <?= e($c['name']) ?>
                         </option>
                     <?php endforeach; ?>
@@ -47,22 +65,48 @@ $statusOptions = [
                     <input type="number" name="price" min="1" required
                            value="<?= (int) $product['price'] ?>">
                 </label>
+
                 <label>Harga pembanding (Rp)
                     <input type="number" name="compare_at_price" min="0"
                            value="<?= e($product['compare_at_price'] ?? '') ?>">
                 </label>
+
                 <label>Stok
                     <input type="number" name="stock" min="0"
                            value="<?= (int) $product['stock'] ?>">
                 </label>
+
                 <label>Warna
                     <input name="color" value="<?= e($product['color'] ?? '') ?>">
                 </label>
             </div>
 
             <label>Tag produk
-                <input name="tag" value="<?= e($product['tag'] ?? '') ?>"
-                       placeholder="Contoh: NEW, POPULAR, SALE">
+                <?php
+                    $currentTag = strtoupper((string) ($product['tag'] ?? ''));
+                ?>
+
+                <select name="tag">
+                    <option value="" <?= $currentTag === '' ? 'selected' : '' ?>>
+                        Tanpa tag
+                    </option>
+
+                    <option value="NEW" <?= $currentTag === 'NEW' ? 'selected' : '' ?>>
+                        NEW
+                    </option>
+
+                    <option value="POPULAR" <?= $currentTag === 'POPULAR' ? 'selected' : '' ?>>
+                        POPULAR
+                    </option>
+
+                    <option value="SALE" <?= $currentTag === 'SALE' ? 'selected' : '' ?>>
+                        SALE
+                    </option>
+
+                    <option value="LIMITED" <?= $currentTag === 'LIMITED' ? 'selected' : '' ?>>
+                        LIMITED
+                    </option>
+                </select>
             </label>
 
             <label>URL gambar
@@ -85,9 +129,15 @@ $statusOptions = [
 
             <label>Status produk
                 <select name="status">
-                    <?php foreach ($statusOptions as $value => $label): ?>
-                        <option value="<?= e($value) ?>"
-                            <?= $value === $product['status'] ? 'selected' : '' ?>>
+                    <?php foreach ($pilihanStatus as $nilai => $label): ?>
+                        <?php
+                        $terpilih = '';
+
+                        if ($nilai === $product['status']) {
+                            $terpilih = 'selected';
+                        }
+                        ?>
+                        <option value="<?= e($nilai) ?>" <?= $terpilih ?>>
                             <?= e($label) ?>
                         </option>
                     <?php endforeach; ?>
@@ -95,16 +145,15 @@ $statusOptions = [
             </label>
 
             <label class="checkbox-label">
-                <input type="checkbox" name="is_featured" value="1"
-                    <?= !empty($product['is_featured']) ? 'checked' : '' ?>>
+                <input type="checkbox" name="is_featured" value="1" <?= $centangUnggulan ?>>
                 <span>Tampilkan sebagai produk unggulan di homepage</span>
             </label>
 
             <div style="display:flex;gap:12px;margin-top:8px">
                 <button class="btn-zora" type="submit" style="flex:1">Simpan perubahan →</button>
-                <a href="<?= base_url('admin/products') ?>"
-                   class="subtle-button" style="align-self:center">Batal</a>
+                <a href="<?= base_url('admin/products') ?>" class="subtle-button" style="align-self:center">Batal</a>
             </div>
         </form>
+
     </div>
 </section>

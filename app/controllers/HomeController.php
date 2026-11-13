@@ -1,26 +1,26 @@
 <?php
 /**
- * Controller Beranda (Home): Menyiapkan data awal untuk pengunjung website.
+ * CONTROLLER BERANDA
+ * ==================
+ * Menyiapkan data untuk halaman utama (homepage).
  */
 class HomeController
 {
     /**
-     * Menampilkan halaman utama (homepage) ZORA.
-     * Mengambil 4 produk unggulan dan daftar kategori untuk ditampilkan di slider/grid.
+     * Menampilkan halaman beranda.
      */
-    public function index(): void
+    public function index()
     {
-        // Mengambil produk pilihan dengan status aktif dan is_featured = 1.
-        $featuredProducts = Product::featured(4);
+        // Ambil 4 produk unggulan untuk ditampilkan di beranda
+        $produkUnggulan = Product::featured(4);
 
-        // Mengambil seluruh kategori produk aktif beserta jumlah barangnya.
-        $categories = Category::all();
+        // Ambil semua kategori beserta jumlah produknya
+        $kategori = Category::all();
 
-        // Me-render tampilan template home/index dengan data pendukung.
         render('home/index', [
             'pageTitle'  => 'ZORA — Electronics for Everyday Life',
-            'featured'   => $featuredProducts,
-            'categories' => $categories,
+            'featured'   => $produkUnggulan,
+            'categories' => $kategori,
         ]);
     }
 }

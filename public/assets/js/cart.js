@@ -1,144 +1,40 @@
-
-/* ZORA cart micro-interactions */
-
-document.addEventListener('DOMContentLoaded', () => {
-
+/* ZORA — validasi dan umpan balik keranjang */
+(function () {
     'use strict';
 
-    const animateFeedback = (element) => {
+    function siapkanValidasiJumlah() {
+        var daftarInput = document.querySelectorAll('.quantity-form input[type="number"]');
 
-        if (
-            !element ||
-            window.matchMedia('(prefers-reduced-motion: reduce)').matches
-        ) {
-            return;
-        }
+        daftarInput.forEach(function (input) {
+            input.addEventListener('blur', function () {
+                var minimal = Number(this.min || 1);
+                var maksimal = Number(this.max || 999);
+                var angka = Number.parseInt(this.value, 10);
 
-        if (typeof element.animate === 'function') {
-
-            element.animate(
-                [
-                    { transform: 'scale(1)' },
-                    { transform: 'scale(1.025)' },
-                    { transform: 'scale(1)' }
-                ],
-                {
-                    duration: 260,
-                    easing: 'ease-out'
-                }
-            );
-        }
-    };
-
-    // Quantity validation
-    document.querySelectorAll(
-        '.quantity-form input[type="number"]'
-    ).forEach((input) => {
-
-        const normalize = () => {
-
-            const min = Number(input.min || 1);
-
-            const max = Number(input.max || 999);
-
-            const raw = Number.parseInt(input.value, 10);
-
-            const safeValue = Number.isFinite(raw) ? raw : min;
-
-            input.value = String(
-                Math.min(max, Math.max(min, safeValue))
-            );
-        };
-
-        input.addEventListener('change', () => {
-
-            normalize();
-
-            animateFeedback(input.closest('.cart-item'));
-
+                if (!Number.isFinite(angka)) angka = minimal;
+                if (angka < minimal) angka = minimal;
+                if (angka > maksimal) angka = maksimal;
+                this.value = String(angka);
+            });
         });
+    }
 
-        input.addEventListener('blur', normalize);
+    function siapkanUmpanBalikForm(pemilih, teks) {
+        document.querySelectorAll(pemilih).forEach(function (form) {
+            form.addEventListener('submit', function () {
+                var tombol = this.querySelector('button[type="submit"], button:not([type])');
+                if (!tombol) return;
 
-    });
-
-    // Update cart button
-    document.querySelectorAll('.quantity-form').forEach((form) => {
-
-        form.addEventListener('submit', () => {
-
-            const button = form.querySelector(
-                'button[type="submit"], button:not([type])'
-            );
-
-            if (!button) return;
-
-            button.disabled = true;
-
-            button.dataset.originalText =
-                button.textContent.trim();
-
-            button.textContent = 'Memperbarui…';
-
+                tombol.disabled = true;
+                tombol.dataset.originalText = tombol.textContent.trim();
+                tombol.textContent = teks;
+            });
         });
+    }
 
+    document.addEventListener('DOMContentLoaded', function () {
+        siapkanValidasiJumlah();
+        siapkanUmpanBalikForm('.quantity-form', 'Memperbarui…');
+        siapkanUmpanBalikForm('.add-cart-form', 'Menambahkan…');
     });
-
-    // Add to cart button
-    document.querySelectorAll('.add-cart-form').forEach((form) => {
-
-        form.addEventListener('submit', () => {
-
-            const button = form.querySelector(
-                'button[type="submit"], button:not([type])'
-            );
-
-            if (!button) return;
-
-            button.disabled = true;
-
-            button.dataset.originalText =
-                button.textContent.trim();
-
-            button.textContent = 'Menambahkan…';
-
-        });
-
-    });
-
-    // Remove cart item animation
-    document.querySelectorAll('.remove-button').forEach((button) => {
-
-        button.addEventListener('click', () => {
-
-            const item = button.closest('.cart-item');
-
-            if (
-                !item ||
-                window.matchMedia('(prefers-reduced-motion: reduce)').matches
-            ) {
-                return;
-            }
-
-            item.animate(
-                [
-                    {
-                        opacity: 1,
-                        transform: 'translateX(0)'
-                    },
-                    {
-                        opacity: 0.35,
-                        transform: 'translateX(8px)'
-                    }
-                ],
-                {
-                    duration: 180,
-                    easing: 'ease-out'
-                }
-            );
-
-        });
-
-    });
-
-});
+})();

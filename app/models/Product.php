@@ -1,281 +1,351 @@
 <?php
-
+/**
+ * MODEL PRODUK
+ * ============
+ * Mengelola data tabel "products".
+ * Dipakai untuk katalog, pencarian, detail produk, dan halaman admin.
+ */
 class Product
 {
     /**
-     * Mengambil semua produk aktif dengan filter opsional.
+     * Mengambil produk yang aktif untuk ditampilkan di katalog.
      *
-     * @param array $filters Mendukung key: q (keyword), category (slug), sort, min_price, max_price.
-     * @return array
+     * $filter bisa berisi:
+     *     'q'        -> kata pencarian
+     *     'category' -> slug kategori
+     *     'sort'     -> urutan tampil
      */
-    public static function all(array $filters = []): array
+    public static function all($filter = [])
     {
-        $where  = ["p.status = 'active'"];
-        $params = [];
+        $pdo = db();
 
-        // Filter pencarian keyword.
-        if (!empty($filters['q'])) {
-            $where[]  = "(p.name LIKE ? OR p.description LIKE ? OR p.sku LIKE ?)";
-            $like     = '%' . $filters['q'] . '%';
-            $params[] = $like;
-            $params[] = $like;
-            $params[] = $like;
+        // Kumpulkan kondisi WHERE dan nilainya
+        $kondisi = ["p.status = 'active'"];
+        $nilai = [];
+
+        // ------------------------------------------------------------
+        // Filter 1: kata pencarian (mencari di nama, deskripsi, dan SKU)
+        // ------------------------------------------------------------
+        if (isset($filter['q']) && $filter['q'] !== '') {
+            $kondisi[] = "(p.name LIKE :cari_nama
+                        OR p.description LIKE :cari_deskripsi
+                        OR p.sku LIKE :cari_sku)";
+
+            $kataKunci = '%' . $filter['q'] . '%';
+
+            $nilai['cari_nama'] = $kataKunci;
+            $nilai['cari_deskripsi'] = $kataKunci;
+            $nilai['cari_sku'] = $kataKunci;
         }
 
-        // Filter berdasarkan slug kategori.
-        if (!empty($filters['category'])) {
-            $where[]  = "c.slug = ?";
-            $params[] = $filters['category'];
+        // ------------------------------------------------------------
+        // Filter 2: kategori
+        // ------------------------------------------------------------
+        if (isset($filter['category']) && $filter['category'] !== '') {
+            $kondisi[] = "c.slug = :kategori";
+            $nilai['kategori'] = $filter['category'];
         }
 
-        // Filter rentang harga.
-        if (isset($filters['min_price']) && $filters['min_price'] !== '') {
-            $where[]  = "p.price >= ?";
-            $params[] = (float) $filters['min_price'];
+        // ------------------------------------------------------------
+        // Filter 3: harga terendah
+        // ------------------------------------------------------------
+        if (isset($filter['min_price']) && $filter['min_price'] !== '') {
+            $kondisi[] = "p.price >= :harga_min";
+            $nilai['harga_min'] = (float) $filter['min_price'];
         }
 
-        if (isset($filters['max_price']) && $filters['max_price'] !== '') {
-            $where[]  = "p.price <= ?";
-            $params[] = (float) $filters['max_price'];
+        // ------------------------------------------------------------
+        // Filter 4: harga tertinggi
+        // ------------------------------------------------------------
+        if (isset($filter['max_price']) && $filter['max_price'] !== '') {
+            $kondisi[] = "p.price <= :harga_max";
+            $nilai['harga_max'] = (float) $filter['max_price'];
         }
 
-        // Pengurutan.
-        $order = match ($filters['sort'] ?? '') {
-            'price_asc'  => 'p.price ASC',
-            'price_desc' => 'p.price DESC',
-            'name'       => 'p.name ASC',
-            default      => 'p.is_featured DESC, p.created_at DESC',
-        };
+        // ------------------------------------------------------------
+        // Urutan tampil produk
+        // Nilai sort sudah disaring di controller, jadi aman dipakai langsung.
+        // ------------------------------------------------------------
+        $urutan = 'p.is_featured DESC, p.created_at DESC';
 
-        $sql = "SELECT p.*, c.name AS category_name, c.slug AS category_slug
+        if (isset($filter['sort'])) {
+            if ($filter['sort'] === 'price_asc') {
+                $urutan = 'p.price ASC';
+            } elseif ($filter['sort'] === 'price_desc') {
+                $urutan = 'p.price DESC';
+            } elseif ($filter['sort'] === 'name') {
+                $urutan = 'p.name ASC';
+            }
+        }
+
+        // ------------------------------------------------------------
+        // Susun query lengkap
+        // ------------------------------------------------------------
+        $sql = "SELECT
+                    p.*,
+                    c.name AS category_name,
+                    c.slug AS category_slug
                 FROM products p
                 LEFT JOIN categories c ON c.id = p.category_id
-                WHERE " . implode(' AND ', $where) . "
-                ORDER BY {$order}";
+                WHERE " . implode(' AND ', $kondisi) . "
+                ORDER BY " . $urutan;
 
-        $stmt = db()->prepare($sql);
-        $stmt->execute($params);
+        $query = $pdo->prepare($sql);
+        $query->execute($nilai);
 
-        return $stmt->fetchAll();
+        return $query->fetchAll();
     }
 
-    /**
-     * Mengambil produk unggulan (is_featured = 1).
-     *
-     * @param int $limit Jumlah produk yang diambil.
-     * @return array
-     */
-    public static function featured(int $limit = 4): array
-    {
-        $stmt = db()->prepare(
-            "SELECT p.*, c.name AS category_name, c.slug AS category_slug
-             FROM products p
-             LEFT JOIN categories c ON c.id = p.category_id
-             WHERE p.status = 'active' AND p.is_featured = 1
-             ORDER BY p.created_at DESC
-             LIMIT ?"
-        );
-        $stmt->bindValue(1, $limit, PDO::PARAM_INT);
-        $stmt->execute();
 
-        return $stmt->fetchAll();
+    /**
+     * Mengambil produk unggulan untuk ditampilkan di halaman beranda.
+     */
+    public static function featured($jumlah = 4)
+    {
+        $pdo = db();
+
+        $sql = "SELECT
+                    p.*,
+                    c.name AS category_name,
+                    c.slug AS category_slug
+                FROM products p
+                LEFT JOIN categories c ON c.id = p.category_id
+                WHERE p.status = 'active'
+                  AND p.is_featured = 1
+                ORDER BY p.created_at DESC
+                LIMIT :jumlah";
+
+        $query = $pdo->prepare($sql);
+
+        // LIMIT harus dikirim sebagai angka, bukan teks
+        $query->bindValue('jumlah', $jumlah, PDO::PARAM_INT);
+        $query->execute();
+
+        return $query->fetchAll();
     }
 
-    /**
-     * Menemukan produk aktif berdasarkan slug URL.
-     *
-     * @param string $slug
-     * @return array|null
-     */
-    public static function findBySlug(string $slug): ?array
-    {
-        $stmt = db()->prepare(
-            "SELECT p.*, c.name AS category_name, c.slug AS category_slug
-             FROM products p
-             LEFT JOIN categories c ON c.id = p.category_id
-             WHERE p.slug = ? AND p.status = 'active'
-             LIMIT 1"
-        );
-        $stmt->execute([$slug]);
 
-        return $stmt->fetch() ?: null;
+    /**
+     * Mencari satu produk aktif berdasarkan slug.
+     * Dipakai di halaman detail produk.
+     */
+    public static function findBySlug($slug)
+    {
+        $pdo = db();
+
+        $sql = "SELECT
+                    p.*,
+                    c.name AS category_name,
+                    c.slug AS category_slug
+                FROM products p
+                LEFT JOIN categories c ON c.id = p.category_id
+                WHERE p.slug = :slug
+                  AND p.status = 'active'
+                LIMIT 1";
+
+        $query = $pdo->prepare($sql);
+        $query->execute(['slug' => $slug]);
+
+        $hasil = $query->fetch();
+
+        if ($hasil === false) {
+            return null;
+        }
+
+        return $hasil;
     }
 
-    /**
-     * Menemukan produk berdasarkan ID (semua status, termasuk draft/archived).
-     *
-     * @param int $id
-     * @return array|null
-     */
-    public static function find(int $id): ?array
-    {
-        $stmt = db()->prepare(
-            "SELECT p.*, c.name AS category_name
-             FROM products p
-             LEFT JOIN categories c ON c.id = p.category_id
-             WHERE p.id = ?"
-        );
-        $stmt->execute([$id]);
 
-        return $stmt->fetch() ?: null;
+    /**
+     * Mencari satu produk berdasarkan ID (semua status).
+     * Dipakai di halaman admin supaya produk arsip tetap bisa dibuka.
+     */
+    public static function find($id)
+    {
+        $pdo = db();
+
+        $sql = "SELECT
+                    p.*,
+                    c.name AS category_name
+                FROM products p
+                LEFT JOIN categories c ON c.id = p.category_id
+                WHERE p.id = :id
+                LIMIT 1";
+
+        $query = $pdo->prepare($sql);
+        $query->execute(['id' => $id]);
+
+        $hasil = $query->fetch();
+
+        if ($hasil === false) {
+            return null;
+        }
+
+        return $hasil;
     }
 
+
     /**
-     * Mengambil semua produk untuk halaman admin (semua status).
-     *
-     * @return array
+     * Mengambil semua produk untuk halaman admin.
+     * Termasuk produk yang masih draft dan sudah diarsipkan.
      */
-    public static function adminAll(): array
+    public static function adminAll()
     {
-        return db()->query(
-            "SELECT p.*, c.name AS category_name
-             FROM products p
-             LEFT JOIN categories c ON c.id = p.category_id
-             ORDER BY p.created_at DESC"
-        )->fetchAll();
+        $pdo = db();
+
+        $sql = "SELECT
+                    p.*,
+                    c.name AS category_name
+                FROM products p
+                LEFT JOIN categories c ON c.id = p.category_id
+                ORDER BY p.created_at DESC";
+
+        $query = $pdo->query($sql);
+        return $query->fetchAll();
     }
 
+
     /**
-     * Membuat produk baru.
-     *
-     * BUG FIX (M9): Sebelumnya slug selalu di-append dengan random hex,
-     * sehingga URL tidak predictable dan tidak SEO-friendly.
-     * Sekarang slug di-generate dari nama, lalu di-cek duplikat.
-     * Jika duplikat, tambahkan suffix angka (-2, -3, dst.).
-     *
-     * @param array $d Data produk.
-     * @return int     ID produk baru.
+     * Menambah produk baru.
+     * Mengembalikan ID produk yang baru dibuat.
      */
-    public static function create(array $d): int
+    public static function create($data)
     {
-        $baseSlug = slugify($d['name']);
-        $slug     = self::uniqueSlug($baseSlug);
+        $pdo = db();
 
-        $stmt = db()->prepare(
-            "INSERT INTO products
-                (category_id, name, slug, sku, description, price,
-                 compare_at_price, stock, color, tag, image_url,
-                 status, is_featured)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)"
-        );
+        // Buat alamat (slug) dari nama produk, pastikan belum dipakai
+        $slug = self::buatSlugUnik($data['name']);
 
-        $stmt->execute([
-            $d['category_id'] ?: null,
-            $d['name'],
-            $slug,
-            $d['sku'],
-            $d['description'],
-            $d['price'],
-            $d['compare_at_price'] ?: null,
-            $d['stock'],
-            $d['color'],
-            $d['tag'] ?: null,
-            $d['image_url'],
-            !empty($d['is_featured']) ? 1 : 0,
+        $sql = "INSERT INTO products
+                    (category_id, name, slug, sku, description, price,
+                     compare_at_price, stock, color, tag, image_url,
+                     status, is_featured)
+                VALUES
+                    (:category_id, :name, :slug, :sku, :description, :price,
+                     :compare_at_price, :stock, :color, :tag, :image_url,
+                     'active', :is_featured)";
+
+        $query = $pdo->prepare($sql);
+        $query->execute([
+            'category_id'      => $data['category_id'],
+            'name'             => $data['name'],
+            'slug'             => $slug,
+            'sku'              => $data['sku'],
+            'description'      => $data['description'],
+            'price'            => $data['price'],
+            'compare_at_price' => $data['compare_at_price'],
+            'stock'            => $data['stock'],
+            'color'            => $data['color'],
+            'tag'              => $data['tag'],
+            'image_url'        => $data['image_url'],
+            'is_featured'      => $data['is_featured'],
         ]);
 
-        return (int) db()->lastInsertId();
+        return (int) $pdo->lastInsertId();
     }
+
 
     /**
      * Memperbarui data produk.
-     *
-     * @param int   $id   ID produk.
-     * @param array $data Data yang akan diperbarui.
      */
-    public static function update(int $id, array $data): void
+    public static function update($id, $data)
     {
-        $stmt = db()->prepare(
-            "UPDATE products SET
-                category_id      = ?,
-                name             = ?,
-                sku              = ?,
-                description      = ?,
-                price            = ?,
-                compare_at_price = ?,
-                stock            = ?,
-                color            = ?,
-                tag              = ?,
-                image_url        = ?,
-                status           = ?,
-                is_featured      = ?
-             WHERE id = ?"
-        );
+        $pdo = db();
 
-        $stmt->execute([
-            $data['category_id'] ?: null,
-            $data['name'],
-            $data['sku'],
-            $data['description'],
-            $data['price'],
-            $data['compare_at_price'] ?: null,
-            $data['stock'],
-            $data['color'],
-            $data['tag'] ?: null,
-            $data['image_url'],
-            $data['status'],
-            !empty($data['is_featured']) ? 1 : 0,
-            $id,
+        $sql = "UPDATE products SET
+                    category_id      = :category_id,
+                    name             = :name,
+                    sku              = :sku,
+                    description      = :description,
+                    price            = :price,
+                    compare_at_price = :compare_at_price,
+                    stock            = :stock,
+                    color            = :color,
+                    tag              = :tag,
+                    image_url        = :image_url,
+                    status           = :status,
+                    is_featured      = :is_featured
+                WHERE id = :id";
+
+        $query = $pdo->prepare($sql);
+        $query->execute([
+            'category_id'      => $data['category_id'],
+            'name'             => $data['name'],
+            'sku'              => $data['sku'],
+            'description'      => $data['description'],
+            'price'            => $data['price'],
+            'compare_at_price' => $data['compare_at_price'],
+            'stock'            => $data['stock'],
+            'color'            => $data['color'],
+            'tag'              => $data['tag'],
+            'image_url'        => $data['image_url'],
+            'status'           => $data['status'],
+            'is_featured'      => $data['is_featured'],
+            'id'               => $id,
         ]);
     }
 
+
     /**
-     * Mengarsipkan produk (soft-delete).
-     *
-     * @param int $id ID produk.
+     * Mengarsipkan produk (bukan dihapus permanen).
+     * Produk arsip tidak muncul lagi di katalog.
      */
-    public static function delete(int $id): void
+    public static function delete($id)
     {
-        db()->prepare(
-            "UPDATE products SET status = 'archived' WHERE id = ?"
-        )->execute([$id]);
+        $pdo = db();
+
+        $sql = "UPDATE products SET status = 'archived' WHERE id = :id";
+        $pdo->prepare($sql)->execute(['id' => $id]);
     }
 
+
     /**
-     * Membatalkan arsip produk (mengembalikan status menjadi 'active' agar kembali dijual).
-     *
-     * @param int $id ID produk.
+     * Mengaktifkan kembali produk yang sudah diarsipkan.
      */
-    public static function restore(int $id): void
+    public static function restore($id)
     {
-        db()->prepare(
-            "UPDATE products SET status = 'active' WHERE id = ?"
-        )->execute([$id]);
+        $pdo = db();
+
+        $sql = "UPDATE products SET status = 'active' WHERE id = :id";
+        $pdo->prepare($sql)->execute(['id' => $id]);
     }
 
-    /**
-     * Membuat slug unik berdasarkan slug dasar.
-     * Menambahkan suffix angka (-2, -3, dst.) jika slug sudah digunakan.
-     *
-     * @param string $baseSlug Slug awal dari nama produk.
-     * @return string          Slug unik yang belum digunakan.
-     */
-    private static function uniqueSlug(string $baseSlug): string
-    {
-        $slug   = $baseSlug;
-        $suffix = 2;
 
-        while (self::slugExists($slug)) {
-            $slug = $baseSlug . '-' . $suffix;
-            $suffix++;
+    /**
+     * Membuat slug yang belum dipakai produk lain.
+     *
+     * Contoh: "Nova Phone" sudah ada, maka produk baru
+     * akan mendapat slug "nova-phone-2", "nova-phone-3", dan seterusnya.
+     */
+    private static function buatSlugUnik($namaProduk)
+    {
+        $slugDasar = slugify($namaProduk);
+        $slug = $slugDasar;
+        $angka = 2;
+
+        // Ulangi selama slug masih dipakai produk lain
+        while (self::slugSudahDipakai($slug)) {
+            $slug = $slugDasar . '-' . $angka;
+            $angka = $angka + 1;
         }
 
         return $slug;
     }
 
-    /**
-     * Memeriksa apakah slug sudah digunakan oleh produk lain.
-     *
-     * @param string $slug
-     * @return bool
-     */
-    private static function slugExists(string $slug): bool
-    {
-        $stmt = db()->prepare(
-            "SELECT COUNT(*) FROM products WHERE slug = ?"
-        );
-        $stmt->execute([$slug]);
 
-        return (int) $stmt->fetchColumn() > 0;
+    /**
+     * Memeriksa apakah slug sudah dipakai produk lain.
+     */
+    private static function slugSudahDipakai($slug)
+    {
+        $pdo = db();
+
+        $sql = "SELECT COUNT(*) FROM products WHERE slug = :slug";
+        $query = $pdo->prepare($sql);
+        $query->execute(['slug' => $slug]);
+
+        $jumlah = (int) $query->fetchColumn();
+
+        return $jumlah > 0;
     }
 }

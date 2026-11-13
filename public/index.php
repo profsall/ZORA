@@ -1,34 +1,56 @@
 <?php
-declare(strict_types=1);
+/**
+ * HALAMAN UTAMA APLIKASI (FRONT CONTROLLER)
+ * =========================================
+ * Semua permintaan masuk lewat file ini.
+ * Tugasnya: memuat file pendukung, membaca alamat URL,
+ * lalu memanggil controller yang sesuai.
+ */
 
+// Mulai session untuk menyimpan data login dan keranjang
 session_start();
 
-// 1. Konfigurasi database dan helper.
+
+// ==============================================================
+// BAGIAN 1: MEMUAT FILE PENDUKUNG
+// ==============================================================
+
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../app/helpers/functions.php';
 require_once __DIR__ . '/../app/helpers/auth.php';
 require_once __DIR__ . '/../app/helpers/validation.php';
 
-// 2. Autoload Model dan Controller berdasarkan nama class.
-spl_autoload_register(static function (string $class): void {
-    $directories = [
+
+// ==============================================================
+// BAGIAN 2: MEMUAT CLASS SECARA OTOMATIS
+// ==============================================================
+// Jadi kita tidak perlu menulis require untuk setiap model/controller.
+// Cukup sebut nama class-nya, file akan dicari otomatis.
+
+spl_autoload_register(function ($namaClass) {
+    $folder = [
         __DIR__ . '/../app/models/',
         __DIR__ . '/../app/controllers/',
     ];
 
-    foreach ($directories as $directory) {
-        $file = $directory . $class . '.php';
+    foreach ($folder as $satuFolder) {
+        $lokasiFile = $satuFolder . $namaClass . '.php';
 
-        if (is_file($file)) {
-            require_once $file;
+        if (is_file($lokasiFile)) {
+            require_once $lokasiFile;
             return;
         }
     }
 });
 
-// 3. Periksa koneksi database.
+
+// ==============================================================
+// BAGIAN 3: MEMERIKSA KONEKSI DATABASE
+// ==============================================================
+
 try {
     db();
+
 } catch (Throwable $e) {
     error_log('[ZORA database] ' . $e->getMessage());
     http_response_code(500);
@@ -38,170 +60,242 @@ try {
     <head><meta charset="utf-8"><title>Koneksi Database Gagal</title></head>
     <body style="font-family:Arial,sans-serif;padding:40px">
         <h1>Koneksi database ZORA gagal</h1>
-        <p>Pastikan MySQL aktif dan database <strong>pemweb-teori</strong>
+        <p>Pastikan MySQL aktif dan database <strong>zora</strong>
         sudah dibuat serta dikonfigurasi dengan benar di
         <code>config/database.php</code>.</p>
     </body>
     </html>';
+
     exit;
 }
 
-// 4. Ambil route dari Query String.
-// Contoh: index.php?url=admin/products/edit/5
-$urlValue = $_GET['url'] ?? '';
 
-$path = is_string($urlValue)
-    ? trim($urlValue, '/')
-    : '';
+// ==============================================================
+// BAGIAN 4: MEMBACA ALAMAT URL
+// ==============================================================
+// Contoh URL: index.php?url=admin/products/edit/5
+//
+// Maka bagian-bagiannya:
+//   bagian1 = admin
+//   bagian2 = products
+//   bagian3 = edit
+//   bagian4 = 5
 
-$parts = ($path === '')
-    ? []
-    : explode('/', $path);
+$isiUrl = '';
 
-$first  = $parts[0] ?? 'home';
-$second = $parts[1] ?? '';
-$third  = $parts[2] ?? '';
-$fourth = $parts[3] ?? '';
-
-// Tolak route dengan segmen kosong atau karakter yang tidak diizinkan.
-if (
-    $path !== '' &&
-    !preg_match('~^[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*$~', $path)
-) {
-    http_response_code(404);
-    render('home/not-found', [
-        'pageTitle' => 'Halaman Tidak Ditemukan',
-    ]);
-    exit;
+if (isset($_GET['url'])) {
+    $isiUrl = $_GET['url'];
 }
 
-// 5. Routing aplikasi.
-try {
-    switch ($first) {
-        // Homepage.
-        case 'home':
-            (new HomeController())->index();
-            break;
+// Kalau yang dikirim bukan teks, anggap kosong
+if (!is_string($isiUrl)) {
+    $isiUrl = '';
+}
 
-        // Katalog dan detail produk.
-        case 'products':
-            $productController = new ProductController();
+// Buang garis miring di awal dan akhir
+$alamat = trim($isiUrl, '/');
 
-            if ($second !== '') {
-                $productController->show($second);
-            } else {
-                $productController->index();
-            }
-            break;
+// Pecah alamat menjadi beberapa bagian
+if ($alamat === '') {
+    $bagian = [];
+} else {
+    $bagian = explode('/', $alamat);
+}
 
-        // Authentication.
-        case 'login':
-            (new AuthController())->login();
-            break;
+$bagian1 = '';
+$bagian2 = '';
+$bagian3 = '';
+$bagian4 = '';
 
-        case 'register':
-            (new AuthController())->register();
-            break;
+if (isset($bagian[0])) {
+    $bagian1 = $bagian[0];
+}
 
-        case 'logout':
-            (new AuthController())->logout();
-            break;
+if (isset($bagian[1])) {
+    $bagian2 = $bagian[1];
+}
 
-        // Cart.
-        case 'cart':
-            $cartController = new CartController();
+if (isset($bagian[2])) {
+    $bagian3 = $bagian[2];
+}
 
-            switch ($second) {
-                case 'add':
-                    $cartController->add();
-                    break;
+if (isset($bagian[3])) {
+    $bagian4 = $bagian[3];
+}
 
-                case 'update':
-                    $cartController->update();
-                    break;
+// Kalau alamat kosong, tampilkan halaman beranda
+if ($bagian1 === '') {
+    $bagian1 = 'home';
+}
 
-                case 'remove':
-                    $cartController->remove();
-                    break;
 
-                default:
-                    $cartController->index();
-                    break;
-            }
-            break;
+// ==============================================================
+// BAGIAN 5: MEMERIKSA KEAMANAN ALAMAT
+// ==============================================================
+// Hanya izinkan huruf, angka, tanda hubung, dan garis miring.
+// Ini mencegah alamat berisi karakter aneh atau percobaan path traversal.
 
-        // Checkout.
-        case 'checkout':
-            $checkoutController = new CheckoutController();
+if ($alamat !== '') {
+    $polaAman = '~^[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*$~';
 
-            if (is_post()) {
-                $checkoutController->store();
-            } else {
-                $checkoutController->index();
-            }
-            break;
-
-        // Account.
-        case 'account':
-            require_login();
-
-            render('account/index', [
-                'pageTitle' => 'Akun Saya',
-            ]);
-            break;
-
-        // Order history and detail.
-        case 'orders':
-            $orderController = new OrderController();
-
-            if ($second !== '') {
-                $orderController->show($second);
-            } else {
-                $orderController->index();
-            }
-            break;
-
-        // Admin.
-        case 'admin':
-            $adminController = new AdminController();
-
-            if ($second === 'products') {
-                if ($third === 'edit') {
-                    $adminController->editProduct((int) $fourth);
-                } elseif ($third === 'create') {
-                    $adminController->createProduct();
-                } elseif ($third === 'update') {
-                    $adminController->updateProduct();
-                } elseif ($third === 'delete') {
-                    $adminController->deleteProduct();
-                } elseif ($third === 'restore') {
-                    $adminController->restoreProduct();
-                } else {
-                    $adminController->products();
-                }
-            } elseif ($second === 'orders' && $third === 'update') {
-                $adminController->updateOrderStatus();
-            } else {
-                $adminController->index();
-            }
-            break;
-
-        // Route tidak dikenal.
-        default:
-            http_response_code(404);
-
-            render('home/not-found', [
-                'pageTitle' => 'Halaman Tidak Ditemukan',
-            ]);
-            break;
+    if (!preg_match($polaAman, $alamat)) {
+        http_response_code(404);
+        render('home/not-found', ['pageTitle' => 'Halaman Tidak Ditemukan']);
+        exit;
     }
+}
+
+
+// ==============================================================
+// BAGIAN 6: MENENTUKAN CONTROLLER YANG DIPANGGIL
+// ==============================================================
+
+try {
+
+    // ----------------------------------------------------------
+    // HALAMAN BERANDA
+    // ----------------------------------------------------------
+    if ($bagian1 === 'home') {
+        $controller = new HomeController();
+        $controller->index();
+    }
+
+    // ----------------------------------------------------------
+    // HALAMAN KATALOG PRODUK
+    // ----------------------------------------------------------
+    elseif ($bagian1 === 'products') {
+        $controller = new ProductController();
+
+        if ($bagian2 !== '') {
+            // products/nova-phone-pro  -> halaman detail
+            $controller->show($bagian2);
+        } else {
+            // products                 -> halaman katalog
+            $controller->index();
+        }
+    }
+
+    // ----------------------------------------------------------
+    // LOGIN, DAFTAR, LOGOUT
+    // ----------------------------------------------------------
+    elseif ($bagian1 === 'login') {
+        $controller = new AuthController();
+        $controller->login();
+    }
+
+    elseif ($bagian1 === 'register') {
+        $controller = new AuthController();
+        $controller->register();
+    }
+
+    elseif ($bagian1 === 'logout') {
+        $controller = new AuthController();
+        $controller->logout();
+    }
+
+    // ----------------------------------------------------------
+    // KERANJANG
+    // ----------------------------------------------------------
+    elseif ($bagian1 === 'cart') {
+        $controller = new CartController();
+
+        if ($bagian2 === 'add') {
+            $controller->add();
+        } elseif ($bagian2 === 'update') {
+            $controller->update();
+        } elseif ($bagian2 === 'remove') {
+            $controller->remove();
+        } else {
+            $controller->index();
+        }
+    }
+
+    // ----------------------------------------------------------
+    // CHECKOUT
+    // ----------------------------------------------------------
+    elseif ($bagian1 === 'checkout') {
+        $controller = new CheckoutController();
+
+        if (is_post()) {
+            $controller->store();
+        } else {
+            $controller->index();
+        }
+    }
+
+    // ----------------------------------------------------------
+    // HALAMAN AKUN
+    // ----------------------------------------------------------
+    elseif ($bagian1 === 'account') {
+        require_login();
+
+        render('account/index', ['pageTitle' => 'Akun Saya']);
+    }
+
+    // ----------------------------------------------------------
+    // RIWAYAT PESANAN
+    // ----------------------------------------------------------
+    elseif ($bagian1 === 'orders') {
+        $controller = new OrderController();
+
+        if ($bagian2 !== '') {
+            // orders/5  -> detail pesanan
+            $controller->show($bagian2);
+        } else {
+            // orders    -> daftar pesanan
+            $controller->index();
+        }
+    }
+
+    // ----------------------------------------------------------
+    // HALAMAN ADMIN
+    // ----------------------------------------------------------
+    elseif ($bagian1 === 'admin') {
+        $controller = new AdminController();
+
+        // ----- Kelola produk -----
+        if ($bagian2 === 'products') {
+            if ($bagian3 === 'edit') {
+                $controller->editProduct((int) $bagian4);
+            } elseif ($bagian3 === 'create') {
+                $controller->createProduct();
+            } elseif ($bagian3 === 'update') {
+                $controller->updateProduct();
+            } elseif ($bagian3 === 'delete') {
+                $controller->deleteProduct();
+            } elseif ($bagian3 === 'restore') {
+                $controller->restoreProduct();
+            } else {
+                $controller->products();
+            }
+        }
+
+        // ----- Ubah status pesanan -----
+        elseif ($bagian2 === 'orders' && $bagian3 === 'update') {
+            $controller->updateOrderStatus();
+        }
+
+        // ----- Dashboard -----
+        else {
+            $controller->index();
+        }
+    }
+
+    // ----------------------------------------------------------
+    // ALAMAT TIDAK DIKENAL
+    // ----------------------------------------------------------
+    else {
+        http_response_code(404);
+        render('home/not-found', ['pageTitle' => 'Halaman Tidak Ditemukan']);
+    }
+
 } catch (Throwable $e) {
+    // Ada kesalahan tak terduga di aplikasi.
+    // Detailnya disimpan di log server, pengguna melihat pesan umum.
     error_log('[ZORA application] ' . $e->getMessage());
 
     http_response_code(500);
 
-    // Tidak memanggil view errors/500 karena file tersebut
-    // tidak tersedia pada struktur proyek saat ini.
     echo '<!doctype html>
     <html lang="id">
     <head><meta charset="utf-8"><title>Terjadi Kesalahan</title></head>

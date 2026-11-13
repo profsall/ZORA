@@ -1,31 +1,30 @@
 <?php
-
+/**
+ * CONTROLLER KERANJANG
+ * ====================
+ * Menangani halaman keranjang dan perubahan isinya.
+ */
 class CartController
 {
     /**
      * Menampilkan halaman keranjang.
      */
-    public function index(): void
+    public function index()
     {
-        $items = Cart::items();
+        $daftarBarang = Cart::items();
 
         render('cart/index', [
             'pageTitle' => 'Keranjang',
-            'items'     => $items,
+            'items'     => $daftarBarang,
             'subtotal'  => Cart::subtotal(),
         ]);
     }
 
+
     /**
      * Menambahkan produk ke keranjang.
-     *
-     * UX FIX (H10): Sebelumnya selalu redirect ke halaman daftar produk,
-     * sehingga user yang menambah produk dari halaman detail kehilangan konteks.
-     *
-     * FIX: Redirect kembali ke HTTP_REFERER jika referrer berasal dari
-     * domain yang sama dan path valid. Fallback ke halaman produk.
      */
-    public function add(): void
+    public function add()
     {
         if (!is_post()) {
             http_response_code(405);
@@ -34,8 +33,13 @@ class CartController
 
         verify_csrf();
 
-        $productId = (int) ($_POST['product_id'] ?? 0);
-        $quantity  = max(1, (int) ($_POST['quantity'] ?? 1));
+        $productId = (int) post_string('product_id');
+        $quantity = (int) post_string('quantity');
+
+        // Jumlah minimal 1
+        if ($quantity < 1) {
+            $quantity = 1;
+        }
 
         try {
             if ($productId <= 0) {
@@ -50,15 +54,15 @@ class CartController
             flash('error', $e->getMessage());
         }
 
-        // Redirect kembali ke halaman asal jika referrer valid.
-        $redirectTo = $this->safeReferer('products');
-        redirect($redirectTo);
+        // Kembali ke halaman asal pengguna
+        redirect($this->halamanAsal('products'));
     }
 
+
     /**
-     * Memperbarui kuantitas item di keranjang.
+     * Mengubah jumlah barang di keranjang.
      */
-    public function update(): void
+    public function update()
     {
         if (!is_post()) {
             http_response_code(405);
@@ -67,8 +71,12 @@ class CartController
 
         verify_csrf();
 
-        $itemId   = (int) ($_POST['item_id'] ?? 0);
-        $quantity = max(1, (int) ($_POST['quantity'] ?? 1));
+        $itemId = (int) post_string('item_id');
+        $quantity = (int) post_string('quantity');
+
+        if ($quantity < 1) {
+            $quantity = 1;
+        }
 
         try {
             if ($itemId <= 0) {
@@ -86,10 +94,11 @@ class CartController
         redirect('cart');
     }
 
+
     /**
-     * Menghapus item dari keranjang.
+     * Menghapus barang dari keranjang.
      */
-    public function remove(): void
+    public function remove()
     {
         if (!is_post()) {
             http_response_code(405);
@@ -98,7 +107,7 @@ class CartController
 
         verify_csrf();
 
-        $itemId = (int) ($_POST['item_id'] ?? 0);
+        $itemId = (int) post_string('item_id');
 
         try {
             if ($itemId <= 0) {
@@ -116,63 +125,104 @@ class CartController
         redirect('cart');
     }
 
+
     /**
-     * Mengambil route dari HTTP_REFERER untuk mengembalikan pelanggan
-     * ke halaman asal setelah menambahkan produk.
+     * Menentukan halaman asal pengguna sebelum menambah produk.
      *
-     * Bekerja dengan URL tanpa .htaccess:
-     * /ZORA/public/index.php?url=products/nova-phone-x
+     * Contoh: kalau pengguna menekan tombol dari halaman detail produk,
+     * dia akan kembali ke halaman detail itu (bukan ke daftar produk).
+     *
+     * Kalau halaman asal tidak jelas atau mencurigakan, pakai halaman cadangan.
      */
-    private function safeReferer(string $fallback): string
+    private function halamanAsal($cadangan)
     {
-        $referer = $_SERVER['HTTP_REFERER'] ?? '';
+        $alamatAsal = '';
 
-        if ($referer === '') {
-            return $fallback;
+        if (isset($_SERVER['HTTP_REFERER'])) {
+            $alamatAsal = $_SERVER['HTTP_REFERER'];
         }
 
-        $refererHost = strtolower(
-            (string) parse_url($referer, PHP_URL_HOST)
-        );
-
-        $currentHost = strtolower(
-            (string) parse_url(
-                'http://' . ($_SERVER['HTTP_HOST'] ?? ''),
-                PHP_URL_HOST
-            )
-        );
-
-        if ($refererHost === '' || $refererHost !== $currentHost) {
-            return $fallback;
+        // Tidak ada halaman asal, pakai cadangan
+        if ($alamatAsal === '') {
+            return $cadangan;
         }
 
-        $refererPath = parse_url($referer, PHP_URL_PATH) ?? '';
-        $expectedPath = public_base_path() . '/index.php';
+        // Bandingkan alamat situs halaman asal dengan situs saat ini.
+        // Kalau berbeda, berarti datang dari situs lain -> pakai cadangan.
+        $hostAsal = strtolower((string) parse_url($alamatAsal, PHP_URL_HOST));
+        $hostSekarang = strtolower((string) $this->hostSekarang());
 
-        if ($refererPath !== $expectedPath) {
-            return $fallback;
+        if ($hostAsal === '' || $hostAsal !== $hostSekarang) {
+            return $cadangan;
         }
 
-        $queryString = parse_url($referer, PHP_URL_QUERY) ?? '';
-        parse_str($queryString, $params);
+        // Halaman asal harus berasal dari file index.php aplikasi ini
+        $jalurAsal = parse_url($alamatAsal, PHP_URL_PATH);
 
-        $route = $params['url'] ?? '';
-
-        if (!is_string($route) || $route === '') {
-            return $fallback;
+        if ($jalurAsal === false || $jalurAsal === null) {
+            return $cadangan;
         }
 
-        $route = trim($route, '/');
+        $jalurSeharusnya = public_base_path() . '/index.php';
 
-        // Hanya izinkan karakter route sederhana; hindari path traversal.
-        if (!preg_match('~^[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*$~', $route)) {
-            return $fallback;
+        if ($jalurAsal !== $jalurSeharusnya) {
+            return $cadangan;
         }
 
-        unset($params['url']);
+        // Ambil parameter url dari halaman asal
+        $queryAsal = parse_url($alamatAsal, PHP_URL_QUERY);
 
-        $extraQuery = http_build_query($params);
+        if ($queryAsal === false || $queryAsal === null) {
+            return $cadangan;
+        }
 
-        return $route . ($extraQuery !== '' ? '?' . $extraQuery : '');
+        parse_str($queryAsal, $parameter);
+
+        if (!isset($parameter['url'])) {
+            return $cadangan;
+        }
+
+        $halaman = $parameter['url'];
+
+        if (!is_string($halaman) || $halaman === '') {
+            return $cadangan;
+        }
+
+        $halaman = trim($halaman, '/');
+
+        // Hanya izinkan huruf, angka, tanda hubung, dan garis miring.
+        // Ini mencegah orang menyisipkan alamat berbahaya.
+        $pola = '~^[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*$~';
+
+        if (!preg_match($pola, $halaman)) {
+            return $cadangan;
+        }
+
+        // Kalau halaman asal punya parameter tambahan (misal filter),
+        // ikut sertakan supaya filter tidak hilang.
+        unset($parameter['url']);
+
+        $parameterTambahan = http_build_query($parameter);
+
+        if ($parameterTambahan !== '') {
+            return $halaman . '?' . $parameterTambahan;
+        }
+
+        return $halaman;
+    }
+
+
+    /**
+     * Mengambil nama host dari alamat situs yang sedang dibuka.
+     */
+    private function hostSekarang()
+    {
+        $host = '';
+
+        if (isset($_SERVER['HTTP_HOST'])) {
+            $host = $_SERVER['HTTP_HOST'];
+        }
+
+        return (string) parse_url('http://' . $host, PHP_URL_HOST);
     }
 }

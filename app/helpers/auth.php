@@ -1,39 +1,62 @@
 <?php
 /**
- * Helper autentikasi dan otorisasi pengguna (Authentication & Access Control).
- * Berfungsi sebagai middleware / guard sederhana untuk melindungi halaman sensitif.
+ * FUNGSI LOGIN & HAK AKSES
+ * ========================
+ * Kumpulan fungsi untuk memeriksa siapa yang sedang login
+ * dan membatasi halaman tertentu.
  */
 
+
 /**
- * Mengambil data pengguna yang sedang login saat ini dari sesi browser.
- * Mengembalikan array asosiatif profil pengguna atau null jika belum login.
+ * Mengambil data pengguna yang sedang login.
+ *
+ * Hasilnya berupa array data user, atau null kalau belum login.
  */
-function current_user(): ?array
+function current_user()
 {
-    return $_SESSION['user'] ?? null;
+    if (isset($_SESSION['user'])) {
+        return $_SESSION['user'];
+    }
+
+    return null;
 }
 
+
 /**
- * Memeriksa apakah pengunjung saat ini sudah berstatus login.
+ * Memeriksa apakah pengunjung sudah login.
  */
-function is_logged_in(): bool
+function is_logged_in()
 {
+    if (!isset($_SESSION['user']['id'])) {
+        return false;
+    }
+
     return !empty($_SESSION['user']['id']);
 }
 
-/**
- * Memeriksa apakah pengguna yang sedang login memiliki hak akses peran 'admin'.
- */
-function is_admin(): bool
-{
-    return is_logged_in() && (($_SESSION['user']['role'] ?? '') === 'admin');
-}
 
 /**
- * Proteksi rute (Auth Guard): Mewajibkan pengguna untuk login terlebih dahulu.
- * Jika belum login, redirect ke halaman login dengan pesan peringatan.
+ * Memeriksa apakah pengguna yang login adalah admin.
  */
-function require_login(): void
+function is_admin()
+{
+    if (!is_logged_in()) {
+        return false;
+    }
+
+    if (!isset($_SESSION['user']['role'])) {
+        return false;
+    }
+
+    return $_SESSION['user']['role'] === 'admin';
+}
+
+
+/**
+ * Memaksa pengguna untuk login dulu.
+ * Kalau belum login, otomatis dipindahkan ke halaman login.
+ */
+function require_login()
 {
     if (!is_logged_in()) {
         flash('error', 'Silakan login terlebih dahulu.');
@@ -41,16 +64,17 @@ function require_login(): void
     }
 }
 
+
 /**
- * Proteksi rute (Admin Guard): Mewajibkan pengguna memiliki peran 'admin'.
- * Menghentikan request dengan kode HTTP 403 jika pengguna bukan admin.
+ * Memaksa pengguna untuk login sebagai admin.
+ * Kalau bukan admin, muncul halaman "akses ditolak".
  */
-function require_admin(): void
+function require_admin()
 {
-    // Pastikan sudah login terlebih dahulu.
+    // Pastikan sudah login dulu
     require_login();
 
-    // Jika sudah login tapi bukan admin, tolak akses.
+    // Kalau bukan admin, tolak aksesnya
     if (!is_admin()) {
         http_response_code(403);
         render('home/not-found', ['pageTitle' => 'Akses ditolak']);

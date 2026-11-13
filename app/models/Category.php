@@ -1,17 +1,30 @@
 <?php
-
+/**
+ * MODEL KATEGORI
+ * ==============
+ * Mengelola data tabel "categories".
+ * Model adalah bagian yang berhubungan langsung dengan database.
+ */
 class Category
 {
     /**
-     * Mengambil semua kategori beserta jumlah produk aktif di dalamnya.
+     * Mengambil semua kategori.
      *
-     * @param bool $activeOnly Jika true, hanya ambil kategori dengan is_active = 1.
-     * @return array
+     * $hanyaAktif = true  -> hanya kategori yang aktif saja
+     * $hanyaAktif = false -> semua kategori (dipakai di halaman admin)
      */
-    public static function all(bool $activeOnly = true): array
+    public static function all($hanyaAktif = true)
     {
+        $pdo = db();
+
+        // Query utama: ambil kategori beserta jumlah produknya
         $sql = "SELECT
-                    c.*,
+                    c.id,
+                    c.name,
+                    c.slug,
+                    c.description,
+                    c.is_active,
+                    c.sort_order,
                     (
                         SELECT COUNT(*)
                         FROM products p
@@ -20,26 +33,35 @@ class Category
                     ) AS product_count
                 FROM categories c";
 
-        if ($activeOnly) {
-            $sql .= " WHERE c.is_active = 1";
+        if ($hanyaAktif === true) {
+            $sql = $sql . " WHERE c.is_active = 1";
         }
 
-        $sql .= " ORDER BY c.sort_order, c.name";
+        $sql = $sql . " ORDER BY c.sort_order ASC, c.name ASC";
 
-        return db()->query($sql)->fetchAll();
+        $data = $pdo->query($sql);
+        return $data->fetchAll();
     }
 
-    /**
-     * Menemukan kategori berdasarkan ID.
-     *
-     * @param int $id
-     * @return array|null
-     */
-    public static function find(int $id): ?array
-    {
-        $stmt = db()->prepare("SELECT * FROM categories WHERE id = ?");
-        $stmt->execute([$id]);
 
-        return $stmt->fetch() ?: null;
+    /**
+     * Mengambil satu kategori berdasarkan ID.
+     * Hasilnya null kalau kategori tidak ditemukan.
+     */
+    public static function find($id)
+    {
+        $pdo = db();
+
+        $sql = "SELECT * FROM categories WHERE id = :id LIMIT 1";
+        $query = $pdo->prepare($sql);
+        $query->execute(['id' => $id]);
+
+        $hasil = $query->fetch();
+
+        if ($hasil === false) {
+            return null;
+        }
+
+        return $hasil;
     }
 }

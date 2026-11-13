@@ -1,80 +1,76 @@
 <?php
 /**
- * Controller Produk: Menangani katalog belanja, pencarian keyword, filter kategori,
- * pengurutan harga, serta tampilan halaman detail barang.
+ * CONTROLLER PRODUK
+ * =================
+ * Menangani halaman katalog dan halaman detail produk.
  */
 class ProductController
 {
     /**
-     * Menampilkan katalog seluruh produk dengan dukungan pencarian dan pengurutan.
+     * Menampilkan halaman katalog produk.
+     * Bisa dengan pencarian, filter kategori, dan pengurutan.
      */
-    public function index(): void
+    public function index()
     {
-        // Membaca parameter query string dari URL (misal: /products?q=phone&category=smartphones).
-        $keyword  = $this->getString('q');
-        $category = $this->getString('category');
-        $sort     = $this->getString('sort');
+        // Baca parameter dari URL
+        $kataKunci = get_string('q');
+        $kategori = get_string('category');
+        $urutan = get_string('sort');
 
-        // Whitelist pengurutan untuk mencegah manipulasi query database.
-        $allowedSorts = ['price_asc', 'price_desc', 'name'];
-        if (!in_array($sort, $allowedSorts, true)) {
-            $sort = '';
+        // Hanya urutan berikut yang diperbolehkan.
+        // Ini mencegah orang mengirim nilai sembarangan lewat URL.
+        $urutanValid = ['price_asc', 'price_desc', 'name'];
+
+        if (!in_array($urutan, $urutanValid, true)) {
+            $urutan = '';
         }
 
-        $filters = [
-            'q'        => $keyword,
-            'category' => $category,
-            'sort'     => $sort,
+        $filter = [
+            'q'        => $kataKunci,
+            'category' => $kategori,
+            'sort'     => $urutan,
         ];
 
-        // Mengambil data produk sesuai filter yang aktif.
-        $products   = Product::all($filters);
-        $categories = Category::all();
+        $produk = Product::all($filter);
+        $daftarKategori = Category::all();
 
         render('products/index', [
             'pageTitle'  => 'Semua Produk',
-            'products'   => $products,
-            'categories' => $categories,
-            'filters'    => $filters,
+            'products'   => $produk,
+            'categories' => $daftarKategori,
+            'filters'    => $filter,
         ]);
     }
 
+
     /**
-     * Menampilkan detail spesifikasi satu produk berdasarkan slug URL yang unik.
+     * Menampilkan halaman detail satu produk.
+     * Produk dicari berdasarkan slug di URL.
      */
-    public function show(string $slug): void
+    public function show($slug)
     {
         $slug = trim($slug);
 
-        // Jika slug kosong, kirim response 404 Not Found.
+        // Slug kosong berarti produk tidak ada
         if ($slug === '') {
             http_response_code(404);
             render('home/not-found', ['pageTitle' => 'Produk tidak ditemukan']);
             return;
         }
 
-        // Cari data produk aktif berdasarkan slug.
-        $product = Product::findBySlug($slug);
+        // Cari produk yang aktif
+        $produk = Product::findBySlug($slug);
 
-        // Jika tidak ditemukan atau produk tidak berstatus aktif, tampilkan 404.
-        if (!$product) {
+        // Produk tidak ditemukan atau sudah diarsipkan
+        if ($produk === null) {
             http_response_code(404);
             render('home/not-found', ['pageTitle' => 'Produk tidak ditemukan']);
             return;
         }
 
         render('products/detail', [
-            'pageTitle' => $product['name'],
-            'product'   => $product,
+            'pageTitle' => $produk['name'],
+            'product'   => $produk,
         ]);
-    }
-
-    /**
-     * Mengambil dan membersihkan parameter GET bertipe string dari URL.
-     */
-    private function getString(string $key): string
-    {
-        $value = $_GET[$key] ?? '';
-        return is_string($value) ? trim($value) : '';
     }
 }

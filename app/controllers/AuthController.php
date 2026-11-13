@@ -1,146 +1,171 @@
 <?php
 /**
- * Controller Autentikasi: Menangani alur masuk (login), pendaftaran akun baru (register),
- * penggabungan keranjang belanja tamu ke keranjang akun, serta keluar sistem (logout).
+ * CONTROLLER AUTENTIKASI
+ * ======================
+ * Menangani daftar akun, login, dan logout.
  */
 class AuthController
 {
     /**
-     * Menampilkan form login dan memproses autentikasi pengguna.
+     * Menampilkan form login dan memproses login.
      */
-    public function login(): void
+    public function login()
     {
-        // Jika sudah login, langsung alihkan ke panel yang sesuai hak aksesnya.
+        // Kalau sudah login, tidak perlu login lagi
         if (is_logged_in()) {
-            redirect(is_admin() ? 'admin' : 'account');
+            if (is_admin()) {
+                redirect('admin');
+            } else {
+                redirect('account');
+            }
         }
 
-        $errors = [];
+        $error = [];
 
+        // Proses hanya kalau form dikirim
         if (is_post()) {
-            // Verifikasi token CSRF sebelum memproses data sensitif.
             verify_csrf();
 
-            $email    = is_string($_POST['email'] ?? null) ? strtolower(trim($_POST['email'])) : '';
-            $password = is_string($_POST['password'] ?? null) ? $_POST['password'] : '';
+            // Ambil isi form
+            $email = strtolower(post_string('email'));
+            $password = post_string('password');
 
-            // Validasi format email.
+            // Validasi format email
             if (!valid_email($email)) {
-                $errors[] = 'Format email tidak valid.';
+                $error[] = 'Format email tidak valid.';
             } else {
-                // Cocokkan email dan password ke database.
-                $user = User::authenticate($email, $password);
+                // Cocokkan email dan password ke database
+                $pengguna = User::authenticate($email, $password);
 
-                if ($user) {
-                    $oldSessionId = session_id();
+                if ($pengguna !== null) {
+                    // Simpan ID session lama untuk menggabungkan keranjang
+                    $sessionLama = session_id();
 
-                    // Simpan data profil pengguna ke dalam sesi login.
-                    $_SESSION['user'] = $user;
+                    // Simpan data pengguna ke session (artinya sudah login)
+                    $_SESSION['user'] = $pengguna;
 
-                    // Regenerasi Session ID untuk mencegah serangan Session Fixation.
+                    // Ganti ID session demi keamanan
                     session_regenerate_id(true);
 
-                    // Gabungkan item yang ada di keranjang belanja tamu ke akun member.
-                    Cart::mergeGuestCart((int) $user['id'], $oldSessionId);
+                    // Pindahkan barang keranjang tamu ke akun ini
+                    Cart::mergeGuestCart((int) $pengguna['id'], $sessionLama);
 
-                    redirect(is_admin() ? 'admin' : 'account');
+                    if (is_admin()) {
+                        redirect('admin');
+                    } else {
+                        redirect('account');
+                    }
                 }
 
-                // Berikan pesan ambigu demi keamanan (tidak membocorkan apakah email atau password yang salah).
-                $errors[] = 'Email atau password tidak sesuai.';
+                // Pesan dibuat umum supaya tidak membocorkan
+                // apakah email atau password yang salah
+                $error[] = 'Email atau password tidak sesuai.';
             }
         }
 
         render('auth/login', [
             'pageTitle' => 'Masuk',
-            'errors'    => $errors,
+            'errors'    => $error,
         ]);
     }
 
+
     /**
-     * Menampilkan form pendaftaran akun baru dan menyimpan data pelanggan.
+     * Menampilkan form daftar akun dan menyimpan akun baru.
      */
-    public function register(): void
+    public function register()
     {
+        // Kalau sudah login, tidak perlu daftar lagi
         if (is_logged_in()) {
-            redirect(is_admin() ? 'admin' : 'account');
+            if (is_admin()) {
+                redirect('admin');
+            } else {
+                redirect('account');
+            }
         }
 
-        $errors = [];
+        $error = [];
 
         if (is_post()) {
             verify_csrf();
 
-            $name     = is_string($_POST['name'] ?? null) ? trim($_POST['name']) : '';
-            $email    = is_string($_POST['email'] ?? null) ? strtolower(trim($_POST['email'])) : '';
-            $phone    = is_string($_POST['phone'] ?? null) ? trim($_POST['phone']) : '';
-            $password = is_string($_POST['password'] ?? null) ? $_POST['password'] : '';
-            $confirm  = is_string($_POST['password_confirmation'] ?? null) ? $_POST['password_confirmation'] : '';
+            // Ambil isi form
+            $nama = post_string('name');
+            $email = strtolower(post_string('email'));
+            $telepon = post_string('phone');
+            $password = post_string('password');
+            $konfirmasi = post_string('password_confirmation');
 
-            // Validasi kelengkapan data.
-            if (!required_value($name)) {
-                $errors[] = 'Nama wajib diisi.';
+            // --------------------------------------------------------
+            // Validasi data
+            // --------------------------------------------------------
+            if (!required_value($nama)) {
+                $error[] = 'Nama wajib diisi.';
             }
 
             if (!valid_email($email)) {
-                $errors[] = 'Format email tidak valid.';
-            } elseif (User::findByEmail($email)) {
-                $errors[] = 'Email sudah terdaftar.';
+                $error[] = 'Format email tidak valid.';
+            } else {
+                // Email tidak boleh dipakai dua kali
+                $sudahAda = User::findByEmail($email);
+
+                if ($sudahAda !== null) {
+                    $error[] = 'Email sudah terdaftar.';
+                }
             }
 
             if (!valid_password($password)) {
-                $errors[] = 'Password minimal 8 karakter.';
+                $error[] = 'Password minimal 8 karakter.';
             }
 
-            if ($password !== $confirm) {
-                $errors[] = 'Konfirmasi password tidak sama.';
+            if ($password !== $konfirmasi) {
+                $error[] = 'Konfirmasi password tidak sama.';
             }
 
-            // Jika semua validasi lolos, simpan akun baru.
-            if (!$errors) {
+            // --------------------------------------------------------
+            // Kalau semua validasi lolos, simpan akun baru
+            // --------------------------------------------------------
+            if (empty($error)) {
                 try {
-                    $oldSessionId = session_id();
+                    $sessionLama = session_id();
 
-                    // Buat user baru di tabel users.
-                    $userId = User::create([
-                        'name'     => $name,
-                        'email'    => $email,
-                        'phone'    => $phone,
-                        'password' => $password,
-                    ]);
+                    // Buat akun baru
+                    $userId = User::create($nama, $email, $telepon, $password);
 
-                    $user = User::find($userId);
-                    if (!$user) {
+                    $pengguna = User::find($userId);
+
+                    if ($pengguna === null) {
                         throw new RuntimeException('Data pengguna gagal dibuat.');
                     }
 
-                    // Otomatis login setelah registrasi berhasil.
-                    $_SESSION['user'] = $user;
+                    // Langsung login setelah daftar
+                    $_SESSION['user'] = $pengguna;
                     session_regenerate_id(true);
 
-                    // Migrasikan keranjang belanja sesi tamu ke akun baru.
-                    Cart::mergeGuestCart($userId, $oldSessionId);
+                    // Pindahkan barang keranjang tamu ke akun baru
+                    Cart::mergeGuestCart($userId, $sessionLama);
 
                     redirect('account');
 
                 } catch (Throwable $e) {
                     error_log($e->getMessage());
-                    $errors[] = 'Registrasi gagal. Periksa email dan coba kembali.';
+                    $error[] = 'Registrasi gagal. Periksa email dan coba kembali.';
                 }
             }
         }
 
         render('auth/register', [
             'pageTitle' => 'Buat Akun',
-            'errors'    => $errors,
+            'errors'    => $error,
         ]);
     }
 
+
     /**
-     * Mengakhiri sesi pengguna (Logout).
-     * Wajib menggunakan metode POST dan menyertakan token CSRF untuk mencegah Logout CSRF.
+     * Keluar dari akun (logout).
+     * Harus lewat form POST supaya tidak bisa dipicu dari link biasa.
      */
-    public function logout(): void
+    public function logout()
     {
         if (!is_post()) {
             http_response_code(405);
@@ -149,10 +174,10 @@ class AuthController
 
         verify_csrf();
 
-        // Hapus data pengguna dari session.
+        // Hapus data pengguna dari session
         unset($_SESSION['user']);
 
-        // Ganti ID sesi lama dengan ID baru yang bersih.
+        // Ganti ID session dengan yang baru dan bersih
         session_regenerate_id(true);
 
         redirect('home');

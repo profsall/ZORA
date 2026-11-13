@@ -1,68 +1,75 @@
 
-/* ZORA checkout interactions */
+/* ==========================================================
+   ZORA — interaksi halaman checkout
+   ----------------------------------------------------------
+   Isinya:
+   1. Menandai metode pembayaran yang sedang dipilih
+   2. Memeriksa form sebelum dikirim
+   ========================================================== */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function () {
 
-    'use strict';
+    var form = document.querySelector('.checkout-layout form');
+    var pilihanBayar = document.querySelectorAll('.payment-options input[type="radio"]');
 
-    const form = document.querySelector(
-        '.checkout-layout form'
-    );
+    /* ------------------------------------------------------
+       1. Metode pembayaran yang sedang dipilih
+       ------------------------------------------------------ */
+    var i;
 
-    const paymentOptions = document.querySelectorAll(
-        '.payment-options input[type="radio"]'
-    );
+    for (i = 0; i < pilihanBayar.length; i++) {
 
-    // Payment selection
-    paymentOptions.forEach((input) => {
+        pilihanBayar[i].addEventListener('change', function () {
 
-        input.addEventListener('change', () => {
+            var daftarLabel = document.querySelectorAll('.payment-options label');
+            var j;
 
-            document.querySelectorAll(
-                '.payment-options label'
-            ).forEach((label) => {
+            for (j = 0; j < daftarLabel.length; j++) {
 
-                label.classList.toggle(
-                    'is-selected',
-                    label.contains(input) && input.checked
-                );
+                var iniLabel = daftarLabel[j];
 
-            });
-
+                // Label ini dipilih kalau label memuat radio yang aktif.
+                if (iniLabel.contains(this) && this.checked) {
+                    iniLabel.classList.add('is-selected');
+                } else {
+                    iniLabel.classList.remove('is-selected');
+                }
+            }
         });
+    }
 
-    });
+    // Kalau tidak ada form checkout, tidak perlu lanjut.
+    if (!form) {
+        return;
+    }
 
-    if (!form) return;
+    /* ------------------------------------------------------
+       2. Pemeriksaan form sebelum dikirim
+       ------------------------------------------------------ */
+    form.addEventListener('submit', function (kejadian) {
 
-    // Checkout validation
-    form.addEventListener('submit', (event) => {
-
+        // Kalau ada isian yang belum benar, tahan pengirimannya.
         if (!form.reportValidity()) {
 
-            event.preventDefault();
+            kejadian.preventDefault();
 
-            const invalid = form.querySelector(':invalid');
+            var isianSalah = form.querySelector(':invalid');
 
-            if (invalid) invalid.focus();
+            if (isianSalah) {
+                isianSalah.focus();
+            }
 
             return;
         }
 
-        const button = form.querySelector(
-            'button[type="submit"], button:not([type])'
-        );
+        // Semua sudah benar: matikan tombol supaya tidak dobel.
+        var tombol = form.querySelector('button[type="submit"], button:not([type])');
 
-        if (button) {
+        if (tombol) {
 
-            button.disabled = true;
-
-            button.setAttribute('aria-busy', 'true');
-
-            button.textContent = 'Memproses pesanan…';
-
+            tombol.disabled = true;
+            tombol.setAttribute('aria-busy', 'true');
+            tombol.textContent = 'Memproses pesanan…';
         }
-
     });
-
 });

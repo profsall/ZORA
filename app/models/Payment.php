@@ -1,48 +1,65 @@
 <?php
-
+/**
+ * MODEL PEMBAYARAN
+ * ================
+ * Mengelola data tabel "payments".
+ */
 class Payment
 {
     /**
-     * Mencatat data pembayaran awal untuk sebuah pesanan.
-     *
-     * @param int    $orderId  ID pesanan.
-     * @param string $method   Metode pembayaran.
-     * @param float  $amount   Total nominal pembayaran.
-     * @return int             ID payment yang baru dibuat.
+     * Mencatat pembayaran baru untuk sebuah pesanan.
+     * Status awalnya selalu "pending" (menunggu pembayaran).
      */
-    public static function create(int $orderId, string $method, float $amount): int
+    public static function create($orderId, $metode, $jumlah)
     {
-        $allowed = ['bank_transfer', 'qris', 'ewallet', 'cod'];
+        // Metode pembayaran yang diperbolehkan
+        $metodeValid = ['bank_transfer', 'qris', 'ewallet', 'cod'];
 
-        // Fallback ke bank_transfer jika method tidak dikenal.
-        if (!in_array($method, $allowed, true)) {
-            $method = 'bank_transfer';
+        // Kalau metode tidak dikenal, pakai transfer bank
+        if (!in_array($metode, $metodeValid, true)) {
+            $metode = 'bank_transfer';
         }
 
-        $stmt = db()->prepare(
-            "INSERT INTO payments (order_id, payment_method, payment_status, amount)
-             VALUES (?, ?, 'pending', ?)"
-        );
-        $stmt->execute([$orderId, $method, $amount]);
+        $pdo = db();
 
-        return (int) db()->lastInsertId();
+        $sql = "INSERT INTO payments
+                    (order_id, payment_method, payment_status, amount)
+                VALUES
+                    (:order_id, :metode, 'pending', :jumlah)";
+
+        $query = $pdo->prepare($sql);
+        $query->execute([
+            'order_id' => $orderId,
+            'metode'   => $metode,
+            'jumlah'   => $jumlah,
+        ]);
+
+        return (int) $pdo->lastInsertId();
     }
 
-    /**
-     * Mengambil data pembayaran terbaru untuk sebuah pesanan.
-     *
-     * @param int $orderId ID pesanan.
-     * @return array|null  Data pembayaran atau null jika tidak ada.
-     */
-    public static function forOrder(int $orderId): ?array
-    {
-        $stmt = db()->prepare(
-            "SELECT * FROM payments
-             WHERE order_id = ?
-             ORDER BY id DESC LIMIT 1"
-        );
-        $stmt->execute([$orderId]);
 
-        return $stmt->fetch() ?: null;
+    /**
+     * Mengambil data pembayaran terbaru dari sebuah pesanan.
+     * Hasilnya null kalau belum ada data pembayaran.
+     */
+    public static function forOrder($orderId)
+    {
+        $pdo = db();
+
+        $sql = "SELECT * FROM payments
+                WHERE order_id = :order_id
+                ORDER BY id DESC
+                LIMIT 1";
+
+        $query = $pdo->prepare($sql);
+        $query->execute(['order_id' => $orderId]);
+
+        $hasil = $query->fetch();
+
+        if ($hasil === false) {
+            return null;
+        }
+
+        return $hasil;
     }
 }
