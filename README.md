@@ -1,10 +1,10 @@
 # ZORA — Electronics Store
 
-**ZORA** adalah proyek website e-commerce toko alat elektronik yang dibangun menggunakan PHP Native dengan pola arsitektur Model–View–Controller (MVC), MySQL/MariaDB, PDO, Bootstrap 5, CSS, dan JavaScript.
+**ZORA** adalah website e-commerce toko alat elektronik yang dibangun menggunakan **PHP native** dengan pola arsitektur **Model–View–Controller (MVC)**, MySQL/MariaDB melalui PDO, Bootstrap 5, CSS, dan JavaScript. Tidak ada framework dan tidak ada library tambahan — semua ditulis langsung.
 
-Proyek ini dibuat sebagai aplikasi toko elektronik dengan pengalaman belanja yang sederhana. Desain antarmuka mengambil inspirasi dari pendekatan visual retail UNIQLO: tata letak bersih, navigasi ringkas, ruang kosong yang cukup, hierarki teks yang jelas, serta fokus pada foto dan informasi produk. Identitas visual ZORA menggunakan kombinasi **biru, putih, dan abu-abu muda**, bukan merah-putih.
+Proyek ini dibuat untuk memenuhi tugas mata kuliah Pemrograman Web, dengan ketentuan memakai HTML, PHP, JavaScript, CSS, dan MySQL/MariaDB. Desain antarmuka mengambil inspirasi dari pendekatan visual retail UNIQLO: tata letak bersih, navigasi ringkas, ruang kosong yang cukup, hierarki teks yang jelas, serta fokus pada foto dan informasi produk. Identitas visual ZORA menggunakan kombinasi **biru, putih, dan abu-abu muda**, bukan merah-putih.
 
-> **Status proyek:** aplikasi PHP dan database untuk pengembangan lokal. Fitur katalog, autentikasi, keranjang, checkout, pesanan, dan administrasi dasar sudah tersedia. Pembayaran masih berupa pencatatan metode dan status awal; belum terhubung ke payment gateway.
+> **Status proyek:** aplikasi PHP dan database yang berjalan penuh di lingkungan lokal (XAMPP). Fitur katalog, pencarian dan filter, autentikasi, keranjang, checkout, riwayat pesanan, dan administrasi produk sudah tersedia dan dapat dijalankan. Pembayaran masih berupa pencatatan metode dan status awal; belum terhubung ke payment gateway.
 
 ---
 
@@ -34,7 +34,7 @@ Proyek ini dibuat sebagai aplikasi toko elektronik dengan pengalaman belanja yan
 
 ZORA merupakan website e-commerce untuk menampilkan dan menjual berbagai perangkat elektronik. Pengunjung dapat melihat kategori dan katalog produk, mencari produk, mengurutkan produk berdasarkan harga atau nama, serta membuka halaman detail produk.
 
-Pengguna yang sudah memiliki akun dapat mengelola keranjang belanja, melakukan checkout, memilih metode pembayaran, dan melihat riwayat serta detail pesanan. Administrator memiliki halaman khusus untuk melihat ringkasan toko, menambahkan produk, mengarsipkan produk, dan memperbarui status pesanan.
+Pengguna yang sudah memiliki akun dapat mengelola keranjang belanja, melakukan checkout, memilih metode pembayaran, dan melihat riwayat serta detail pesanan. Administrator memiliki halaman khusus untuk melihat ringkasan toko, menambah, mengedit, mengarsipkan, dan mengaktifkan kembali produk, serta memperbarui status pesanan.
 
 Aplikasi menggunakan pendekatan **server-rendered PHP**. Browser mengirimkan permintaan ke `public/index.php`, router menentukan controller yang menangani permintaan, model berinteraksi dengan database, lalu view menampilkan hasilnya.
 
@@ -44,6 +44,7 @@ Aplikasi menggunakan pendekatan **server-rendered PHP**. Browser mengirimkan per
 |---|---|
 | Nama aplikasi | ZORA Electronics Store |
 | Jenis aplikasi | Website e-commerce / toko elektronik |
+| Konteks pengerjaan | Proyek pembelajaran Pemrograman Web (PHP native) |
 | Bahasa utama | PHP |
 | Arsitektur | Model–View–Controller (MVC) sederhana |
 | Database | MySQL / MariaDB |
@@ -51,6 +52,17 @@ Aplikasi menggunakan pendekatan **server-rendered PHP**. Browser mengirimkan per
 | Mata uang | Rupiah (IDR) |
 | Bahasa antarmuka | Bahasa Indonesia |
 | Lingkungan pengembangan | XAMPP / localhost |
+
+### Apa yang menjadi fokus proyek ini
+
+Proyek ini dibuat sebagai latihan membangun aplikasi web lengkap dengan PHP native dan MySQL, tanpa framework dan tanpa library tambahan. Karena itu, penekanan utamanya bukan pada jumlah fitur, melainkan pada hal-hal berikut:
+
+1. **Alur MVC yang jelas.** Ada front controller, controller, model, view, dan helper dengan tanggung jawab yang terpisah.
+2. **Keamanan dasar yang benar.** Prepared statement, hash password, token CSRF, dan escaping output diterapkan sejak awal, bukan ditambahkan belakangan.
+3. **Konsistensi data.** Proses checkout memakai transaksi database dan row lock supaya stok tidak pernah salah.
+4. **Struktur database yang rapi.** Foreign key, indeks, dan constraint dipakai secara nyata oleh query aplikasi.
+
+Bagian di luar cakupan tersebut sengaja dibiarkan sederhana. Daftar lengkapnya ada pada [Batasan Fitur Saat Ini](#15-batasan-fitur-saat-ini).
 
 ## 2. Tujuan dan Konsep Desain
 
@@ -153,18 +165,11 @@ ZORA/
 │       │   ├── admin.css
 │       │   ├── responsive.css
 │       │   └── style.css
-│       ├── images/
-│       │   └── zora-mark.svg
 │       └── js/
 │           ├── cart.js
 │           ├── checkout.js
 │           ├── filter.js
 │           └── main.js
-│
-├── storage/
-│   └── uploads/
-│       ├── payments/
-│       └── products/
 │
 ├── .gitignore
 ├── README.md
@@ -180,7 +185,6 @@ ZORA/
 - `config/database.php`: konfigurasi koneksi PDO ke database.
 - `public/`: satu-satunya direktori yang menjadi pintu masuk web. `index.php` bertindak sebagai front controller.
 - `public/assets/`: stylesheet, JavaScript, dan gambar identitas ZORA.
-- `storage/uploads/`: lokasi yang disiapkan untuk file gambar produk dan bukti pembayaran. Upload belum menjadi alur aktif pada versi ini.
 - `zora.sql`: skrip pembuatan database, tabel, indeks, relasi, kategori, produk contoh, dan akun administrator.
 
 ## 5. Fitur Aplikasi
@@ -227,7 +231,7 @@ Password pengguna disimpan menggunakan `password_hash()` dan diverifikasi dengan
 - Keranjang dikosongkan setelah transaksi database berhasil.
 - Pelanggan dapat melihat riwayat dan detail pesanan.
 
-**Aturan ongkos kirim saat ini:** Rp15.000 untuk subtotal di bawah Rp500.000 dan gratis ongkir untuk subtotal minimal Rp500.000. Aturan dapat diubah pada `app/models/Order.php` dan tampilan checkout.
+**Aturan ongkos kirim saat ini:** Rp15.000 untuk subtotal di bawah Rp500.000 dan gratis ongkir untuk subtotal minimal Rp500.000. Aturan ini berada di satu tempat, yaitu fungsi `hitung_ongkir()` pada `app/helpers/functions.php`, sehingga checkout dan tampilan ringkasan selalu memakai nilai yang sama.
 
 ### 5.5 Administrasi
 
@@ -237,9 +241,11 @@ Administrator dapat:
 - Melihat daftar pesanan terbaru.
 - Mengubah status pesanan.
 - Menambahkan produk dengan nama, SKU, kategori, harga, stok, warna, tag, URL gambar, deskripsi, dan pilihan produk unggulan.
+- Mengedit produk, termasuk mengubah nama, harga, stok, status, dan data lainnya.
 - Mengarsipkan produk agar tidak lagi tampil dalam katalog aktif.
+- Mengaktifkan kembali produk yang sudah diarsipkan.
 
-Pengelolaan produk pada versi saat ini berupa **tambah dan arsip**, belum mencakup edit produk. Pengelolaan kategori, pengguna, dan verifikasi pembayaran juga belum tersedia di dashboard.
+Pengelolaan kategori, pengguna, dan verifikasi pembayaran belum tersedia di dashboard.
 
 ## 6. Alur Penggunaan
 
@@ -269,7 +275,7 @@ Ketika checkout berhasil, stok produk dikurangi sesuai kuantitas pesanan. Jika a
 
 ## 7. Struktur dan Relasi Database
 
-Nama database: **`pemweb-teori`**  
+Nama database: **`zora`**  
 Charset: `utf8mb4`  
 Collation: `utf8mb4_unicode_ci`  
 Storage engine: InnoDB.
@@ -279,29 +285,25 @@ Storage engine: InnoDB.
 | 1 | `users` | Data pelanggan dan administrator, termasuk email, password hash, role, dan status akun. |
 | 2 | `categories` | Kategori produk seperti Smartphones, Computers, Audio, Wearables, Cameras, dan Accessories. |
 | 3 | `products` | Informasi produk: kategori, nama, SKU, deskripsi, harga, stok, warna, gambar, status, dan penanda produk unggulan. |
-| 4 | `product_images` | Struktur untuk menyimpan foto tambahan/galeri produk. |
-| 5 | `user_addresses` | Struktur untuk menyimpan alamat pengguna. |
-| 6 | `carts` | Keranjang aktif milik pengguna atau sesi pengunjung. |
-| 7 | `cart_items` | Produk, kuantitas, dan snapshot harga pada keranjang. |
-| 8 | `orders` | Data utama pesanan, penerima, alamat, subtotal, ongkir, total, dan status pesanan. |
-| 9 | `order_items` | Snapshot nama, SKU, foto, harga, kuantitas, dan total setiap produk pada pesanan. |
-| 10 | `payments` | Metode, nominal, status pembayaran, dan kolom yang disiapkan untuk referensi/bukti pembayaran. |
-| 11 | `wishlist_items` | Struktur untuk menyimpan produk favorit pengguna. |
+| 4 | `carts` | Keranjang aktif milik pengguna atau sesi pengunjung. |
+| 5 | `cart_items` | Produk, kuantitas, dan snapshot harga pada keranjang. |
+| 6 | `orders` | Data utama pesanan, penerima, alamat, subtotal, ongkir, total, dan status pesanan. |
+| 7 | `order_items` | Snapshot nama, SKU, foto, harga, kuantitas, dan total setiap produk pada pesanan. |
+| 8 | `payments` | Metode, nominal, dan status pembayaran. |
 
 ### Relasi utama
 
 - Satu kategori dapat memiliki banyak produk; produk dapat tidak memiliki kategori (`category_id` boleh `NULL`).
-- Satu pengguna dapat memiliki beberapa alamat, keranjang, dan pesanan.
+- Satu pengguna dapat memiliki beberapa keranjang dan pesanan.
 - Satu keranjang memiliki beberapa `cart_items`; setiap item merujuk pada satu produk.
 - Satu pesanan memiliki beberapa `order_items`.
 - Satu pesanan memiliki data pembayaran pada tabel `payments`.
-- Wishlist menghubungkan pengguna dan produk.
 
 Relasi database menggunakan foreign key. Penghapusan beberapa data induk menerapkan aturan `CASCADE`, `SET NULL`, atau `RESTRICT` sesuai kebutuhan untuk menjaga konsistensi data.
 
 ### Data contoh
 
-Skrip `zora.sql` menyiapkan 11 tabel yang digunakan aplikasi, membuat akun demo administrator, memasukkan enam kategori, dan memasukkan 24 produk contoh (empat produk per kategori). Skrip menggunakan `CREATE TABLE IF NOT EXISTS` dan tidak menjalankan `DROP TABLE`.
+Skrip `zora.sql` menyiapkan 8 tabel yang digunakan aplikasi, membuat akun demo administrator, memasukkan enam kategori, dan memasukkan 16 produk contoh. Skrip menggunakan `CREATE TABLE IF NOT EXISTS` dan tidak menjalankan `DROP TABLE`.
 
 Skrip aman dari penghapusan tabel secara otomatis, tetapi `CREATE TABLE IF NOT EXISTS` tidak memperbaiki struktur tabel lama yang kolomnya berbeda. Untuk instalasi awal, gunakan database kosong bernama `zora`. Jika database sudah dipakai, lakukan backup dan bandingkan struktur tabel sebelum mengimpor.
 
@@ -347,23 +349,23 @@ Pastikan keduanya berjalan tanpa konflik port.
 2. Pilih tab **Import**.
 3. Klik **Choose File** dan pilih `C:\xampp\htdocs\ZORA\zora.sql`.
 4. Klik **Import** atau **Go**.
-5. Pastikan database `pemweb-teori` muncul dan terdapat 11 tabel.
-6. Periksa tabel `categories` (6 kategori) dan `products` (24 produk contoh).
+5. Pastikan database `zora` muncul dan terdapat 8 tabel.
+6. Periksa tabel `categories` (6 kategori) dan `products` (16 produk contoh).
 
-Skrip akan membuat database `pemweb-teori` secara otomatis. Jalankan pada database baru untuk instalasi pertama. Jangan menghapus database lama sebelum melakukan backup.
+Skrip akan membuat database `zora` secara otomatis. Jalankan pada database baru untuk instalasi pertama. Jangan menghapus database lama sebelum melakukan backup.
 
 ### Langkah 4 — Periksa koneksi database
 
 Buka `config/database.php`. Konfigurasi default untuk instalasi XAMPP standar adalah:
 
 ```php
-const DB_HOST = '127.0.0.1';
-const DB_NAME = 'pemweb-teori';
-const DB_USER = 'root';
-const DB_PASS = '';
+$dbHost = '127.0.0.1';
+$dbName = 'zora';
+$dbUser = 'root';
+$dbPass = '';
 ```
 
-Sesuaikan `DB_USER` dan `DB_PASS` bila MySQL lokal menggunakan username atau password berbeda.
+Sesuaikan `$dbUser` dan `$dbPass` bila MySQL lokal menggunakan username atau password berbeda.
 
 ### Langkah 5 — Buka aplikasi
 
@@ -379,7 +381,7 @@ Proyek ini tidak menggunakan `.htaccess`. Semua halaman diarahkan melalui `publi
 http://localhost/ZORA/public/index.php?url=products
 http://localhost/ZORA/public/index.php?url=cart
 http://localhost/ZORA/public/index.php?url=login
-http://localhost/ZORA/public/index.php?url=products/nova-phone-x
+http://localhost/ZORA/public/index.php?url=products/nova-phone-pro
 http://localhost/ZORA/public/index.php?url=admin
 ```
 
@@ -465,8 +467,8 @@ Model bertanggung jawab pada akses dan pengolahan data database.
 
 | Model | Tanggung jawab |
 |---|---|
-| `User.php` | Mencari akun, membuat akun, autentikasi, dan memperbarui data profil. |
-| `Product.php` | Mengambil katalog, produk unggulan, detail berdasarkan slug, menambah, dan mengarsipkan produk. |
+| `User.php` | Mencari akun berdasarkan email atau ID, membuat akun baru, dan memverifikasi login. |
+| `Product.php` | Mengambil katalog, produk unggulan, detail berdasarkan slug, serta menambah, memperbarui, mengarsipkan, dan mengaktifkan kembali produk. |
 | `Category.php` | Mengambil daftar kategori dan detail kategori. |
 | `Cart.php` | Membuat/mengambil keranjang, menambah item, mengubah jumlah, menghapus item, menghitung subtotal, dan menggabungkan keranjang tamu. |
 | `Order.php` | Membuat pesanan dari keranjang, mengambil riwayat/detail pesanan, dan memperbarui status. |
@@ -484,7 +486,7 @@ Controller menerima permintaan dari router, menjalankan validasi dan pemeriksaan
 | `CartController.php` | Menampilkan dan memproses perubahan keranjang. |
 | `CheckoutController.php` | Memvalidasi data checkout dan membuat pesanan. |
 | `OrderController.php` | Menampilkan riwayat dan detail pesanan milik pelanggan. |
-| `AdminController.php` | Dashboard admin, penambahan/arsip produk, dan perubahan status pesanan. |
+| `AdminController.php` | Dashboard admin, tambah/edit/arsip/aktifkan produk, dan perubahan status pesanan. |
 
 ### View
 
@@ -492,9 +494,9 @@ View adalah template HTML/PHP yang menampilkan data dari controller. Layout `hea
 
 ### Helper
 
-- `functions.php`: URL, asset, redirect, escaping HTML, format Rupiah, slug, flash message, rendering view, dan CSRF.
+- `functions.php`: URL, asset, redirect, escaping HTML, format Rupiah, slug, flash message, rendering view, CSRF, label status, dan perhitungan ongkos kirim.
 - `auth.php`: pengguna aktif, pemeriksaan login, dan pembatasan akses admin.
-- `validation.php`: pemeriksaan email, password, input wajib, dan bilangan positif.
+- `validation.php`: pemeriksaan format email, panjang password, input wajib, dan format URL gambar.
 
 ### Front controller dan autoload
 
@@ -504,32 +506,36 @@ View adalah template HTML/PHP yang menampilkan data dari controller. Layout `hea
 
 Fitur keamanan yang sudah diterapkan pada kode:
 
-- Query database menggunakan PDO prepared statements pada operasi yang menerima input.
-- Password disimpan menggunakan `password_hash()` dan diverifikasi menggunakan `password_verify()`.
-- Session ID diperbarui setelah login dan registrasi menggunakan `session_regenerate_id(true)`.
-- Form yang mengubah data menggunakan token CSRF.
-- Output dinamis pada template di-escape menggunakan helper `e()` yang memanggil `htmlspecialchars()`.
+- Query database menggunakan PDO prepared statements pada seluruh operasi yang menerima input pengguna.
+- Koneksi PDO memakai `PDO::ERRMODE_EXCEPTION`, `PDO::FETCH_ASSOC`, dan `PDO::EMULATE_PREPARES = false`, sehingga parameter benar-benar dikirim terpisah dari teks query.
+- Password disimpan menggunakan `password_hash()` dan diverifikasi menggunakan `password_verify()`; hash tidak pernah disimpan di session.
+- Session ID diperbarui setelah login, registrasi, dan logout menggunakan `session_regenerate_id(true)`.
+- Setiap form yang mengubah data memakai token CSRF, dan token dibandingkan dengan `hash_equals()` agar tidak bocor lewat perbedaan waktu eksekusi.
+- Output dinamis pada template di-escape menggunakan helper `e()` yang memanggil `htmlspecialchars()` dengan `ENT_QUOTES`.
+- Alamat pada parameter `url` disaring dengan pola whitelist, sehingga karakter di luar huruf, angka, tanda hubung, dan garis miring langsung ditolak dengan status 404.
 - Halaman checkout mensyaratkan login.
 - Halaman admin memeriksa role pengguna melalui `require_admin()`.
-- Detail pesanan pelanggan dibatasi berdasarkan ID pengguna yang sedang login.
+- Detail pesanan pelanggan dibatasi berdasarkan ID pengguna yang sedang login, sehingga ID pesanan milik orang lain tidak dapat dibuka hanya dengan mengganti angka pada URL.
+- Perubahan pada keranjang selalu disertai pemeriksaan pemilik keranjang.
+- Login yang gagal selalu menampilkan pesan yang sama, sehingga tidak membocorkan apakah email atau password yang salah.
 - Pembuatan pesanan memeriksa stok di dalam transaksi database dan menggunakan row lock (`FOR UPDATE`).
+- Detail kesalahan teknis disimpan ke `error_log` server; pengguna hanya melihat pesan umum.
 
-**Catatan keamanan karena proyek sengaja tidak memakai `.htaccess`:** folder `app`, `config`, dan `storage` masih berada di bawah `htdocs` dan berpotensi diminta langsung melalui URL. Untuk penggunaan yang lebih aman, arahkan Apache DocumentRoot/VirtualHost langsung ke folder `ZORA/public`, atau tambahkan aturan `Require all denied` pada konfigurasi Apache `httpd.conf` untuk folder internal. Jangan mengandalkan kerahasiaan URL. Pada deployment, gunakan HTTPS, matikan tampilan error detail, atur permission file, validasi semua file upload, serta lakukan backup rutin.
+**Catatan keamanan karena proyek sengaja tidak memakai `.htaccess`:** folder `app` dan `config` masih berada di bawah `htdocs` dan berpotensi diminta langsung melalui URL. Untuk penggunaan yang lebih aman, arahkan Apache DocumentRoot/VirtualHost langsung ke folder `ZORA/public`, atau tambahkan aturan `Require all denied` pada konfigurasi Apache `httpd.conf` untuk folder internal. Jangan mengandalkan kerahasiaan URL. Pada deployment, gunakan HTTPS, matikan tampilan error detail, atur permission file, serta lakukan backup rutin.
 
 ## 15. Batasan Fitur Saat Ini
 
 Bagian ini penting agar status aplikasi tidak disalahartikan sebagai sistem produksi yang sudah lengkap.
 
 1. **Payment gateway belum tersedia.** Metode transfer bank, QRIS, e-wallet, dan COD dicatat sebagai pilihan pada tabel pembayaran. Status awal pembayaran adalah `pending`; belum ada integrasi Midtrans, Xendit, atau penyedia pembayaran lainnya.
-2. **Upload bukti pembayaran belum aktif.** Kolom `proof_image` dan folder `storage/uploads/payments` sudah disiapkan, tetapi alur upload dan verifikasi belum dibuat.
-3. **Upload foto produk belum aktif.** Admin saat ini memasukkan URL gambar produk. Folder `storage/uploads/products` disiapkan untuk pengembangan berikutnya.
-4. **Manajemen produk belum CRUD penuh.** Fitur tambah, edit, arsip, dan pemulihan produk sudah tersedia. Upload gambar file langsung belum tersedia; admin memasukkan URL gambar.
-5. **Manajemen kategori belum tersedia di dashboard.** Kategori saat ini berasal dari seed database atau perubahan langsung melalui database.
-6. **Manajemen alamat belum lengkap.** Tabel `user_addresses` sudah dibuat, tetapi halaman CRUD alamat belum tersedia. Informasi pengiriman pada checkout disimpan sebagai snapshot di pesanan.
-7. **Wishlist belum memiliki antarmuka aktif.** Tabel `wishlist_items` sudah disiapkan untuk pengembangan berikutnya.
-8. **Ongkos kirim masih simulasi.** Tarif tetap Rp15.000 dan gratis untuk subtotal minimal Rp500.000; belum ada integrasi kurir atau pelacakan pengiriman.
-9. **Gambar contoh menggunakan URL eksternal.** Jika URL gambar tidak dapat diakses atau tidak ada koneksi internet, gambar dapat gagal ditampilkan.
-10. **Belum dilakukan audit keamanan dan pengujian beban untuk produksi.** Pengujian saat ini ditujukan untuk pengembangan dan pembelajaran di lingkungan lokal.
+2. **Upload bukti pembayaran belum aktif.** Belum ada alur upload dan verifikasi bukti transfer.
+3. **Upload foto produk belum aktif.** Admin memasukkan URL gambar produk, bukan mengunggah file.
+4. **Manajemen kategori belum tersedia di dashboard.** Kategori berasal dari seed database atau perubahan langsung melalui database.
+5. **Alamat pengiriman tidak disimpan sebagai data master.** Informasi penerima pada checkout disimpan sebagai snapshot di tabel `orders`, bukan sebagai daftar alamat yang dapat dipakai ulang.
+6. **Ongkos kirim masih simulasi.** Tarif tetap Rp15.000 dan gratis untuk subtotal minimal Rp500.000; belum ada integrasi kurir atau pelacakan pengiriman.
+7. **Gambar contoh menggunakan URL eksternal.** Jika URL gambar tidak dapat diakses atau tidak ada koneksi internet, gambar dapat gagal ditampilkan.
+8. **Belum ada pembatasan percobaan login.** Halaman login belum memiliki rate limit atau lockout setelah beberapa kali gagal.
+9. **Belum dilakukan audit keamanan dan pengujian beban untuk produksi.** Pengujian saat ini ditujukan untuk pengembangan dan pembelajaran di lingkungan lokal.
 
 ## 16. Troubleshooting
 
@@ -578,14 +584,14 @@ Muat ulang halaman, isi kembali form, lalu kirim ulang. Token CSRF terikat pada 
 
 Pengembangan berikutnya dapat dilakukan secara bertahap:
 
-- Menambahkan fitur edit produk dan pengelolaan kategori pada dashboard admin.
+- Menambahkan pengelolaan kategori pada dashboard admin.
 - Mengaktifkan upload gambar produk dengan validasi tipe, ukuran, dan nama file.
-- Membuat halaman CRUD alamat pelanggan.
-- Mengembangkan wishlist untuk pelanggan.
+- Menyimpan alamat pelanggan sebagai data master agar dapat dipakai ulang saat checkout.
 - Mengintegrasikan payment gateway dan webhook konfirmasi pembayaran.
 - Menambahkan upload bukti pembayaran dan halaman verifikasi admin jika memakai transfer manual.
 - Mengintegrasikan ongkos kirim dan pelacakan kurir.
 - Menambahkan pagination katalog, filter rentang harga, dan pencarian yang lebih lengkap.
+- Menambahkan pembatasan percobaan login (rate limit / lockout).
 - Menambah laporan penjualan, ekspor data, dan audit aktivitas admin.
 - Menulis pengujian otomatis untuk autentikasi, keranjang, checkout, stok, serta status pesanan.
 
