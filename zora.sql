@@ -1,10 +1,3 @@
--- ============================================================
--- ZORA ELECTRONICS STORE
--- FULL DATABASE SCHEMA + DEMO ADMIN + 16 SAMPLE PRODUCTS
--- No DROP TABLE: existing records are not intentionally deleted.
--- Target database name follows config/database.php: zora
--- ============================================================
-
 CREATE DATABASE IF NOT EXISTS `zora`
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
@@ -13,9 +6,7 @@ USE `zora`;
 
 SET NAMES utf8mb4;
 
--- ============================================================
 -- 1. USERS
--- ============================================================
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     name VARCHAR(150) NOT NULL,
@@ -33,9 +24,7 @@ CREATE TABLE IF NOT EXISTS users (
     KEY idx_users_role_status (role, status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
 -- 2. CATEGORIES
--- ============================================================
 CREATE TABLE IF NOT EXISTS categories (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     name VARCHAR(100) NOT NULL,
@@ -52,9 +41,7 @@ CREATE TABLE IF NOT EXISTS categories (
     KEY idx_categories_active_sort (is_active, sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
 -- 3. PRODUCTS
--- ============================================================
 CREATE TABLE IF NOT EXISTS products (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     category_id BIGINT UNSIGNED DEFAULT NULL,
@@ -84,9 +71,7 @@ CREATE TABLE IF NOT EXISTS products (
         ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
 -- 4. CARTS
--- ============================================================
 CREATE TABLE IF NOT EXISTS carts (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     user_id BIGINT UNSIGNED DEFAULT NULL,
@@ -103,10 +88,7 @@ CREATE TABLE IF NOT EXISTS carts (
         ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
 -- 5. CART ITEMS
--- Unique cart/product is required by Cart::add() ON DUPLICATE KEY.
--- ============================================================
 CREATE TABLE IF NOT EXISTS cart_items (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     cart_id BIGINT UNSIGNED NOT NULL,
@@ -127,9 +109,7 @@ CREATE TABLE IF NOT EXISTS cart_items (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
 -- 6. ORDERS
--- ============================================================
 CREATE TABLE IF NOT EXISTS orders (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     order_number VARCHAR(40) NOT NULL,
@@ -162,10 +142,7 @@ CREATE TABLE IF NOT EXISTS orders (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
 -- 7. ORDER ITEMS
--- Product details are stored as a snapshot for order history.
--- ============================================================
 CREATE TABLE IF NOT EXISTS order_items (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     order_id BIGINT UNSIGNED NOT NULL,
@@ -188,9 +165,7 @@ CREATE TABLE IF NOT EXISTS order_items (
         ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
 -- 8. PAYMENTS
--- ============================================================
 CREATE TABLE IF NOT EXISTS payments (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     order_id BIGINT UNSIGNED NOT NULL,
@@ -211,12 +186,9 @@ CREATE TABLE IF NOT EXISTS payments (
         ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
 -- 9. SEED ADMIN USER
 -- Email: admin@zora.test
 -- Password: AdminZora123!
--- INSERT IGNORE does not overwrite an existing account.
--- ============================================================
 INSERT IGNORE INTO users (
     name, email, phone, password, role, status
 ) VALUES (
@@ -228,9 +200,7 @@ INSERT IGNORE INTO users (
     'active'
 );
 
--- ============================================================
 -- 10. SEED SIX PRODUCT CATEGORIES
--- ============================================================
 INSERT INTO categories (name, slug, description, sort_order)
 VALUES
 ('Smartphones', 'smartphones', 'Smartphone untuk kebutuhan sehari-hari.', 1),
@@ -244,11 +214,7 @@ ON DUPLICATE KEY UPDATE
     description = VALUES(description),
     sort_order = VALUES(sort_order);
 
--- ============================================================
 -- 11. SEED 16 PRODUCTS
--- Data follows the product list requested for ZORA.
--- Re-running this section will not duplicate the same slug or SKU.
--- ============================================================
 INSERT INTO products (
     category_id, name, slug, sku, description,
     price, compare_at_price, stock, color, tag,
@@ -269,9 +235,6 @@ SELECT
     'active',
     p.is_featured
 FROM (
-    /* =====================================
-       1. SMARTPHONES
-       ===================================== */
     SELECT
         'smartphones' AS category_slug,
         'Nova Phone Pro' AS name,
@@ -314,9 +277,6 @@ FROM (
         'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=85',
         0
 
-    /* =====================================
-       2. COMPUTERS
-       ===================================== */
     UNION ALL SELECT
         'computers',
         'AirBook Pro 16',
@@ -345,9 +305,6 @@ FROM (
         'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=900&q=85',
         0
 
-    /* =====================================
-       3. AUDIO
-       ===================================== */
     UNION ALL SELECT
         'audio',
         'Wireless Earbuds Pro',
@@ -376,9 +333,6 @@ FROM (
         'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=900&q=85',
         0
 
-    /* =====================================
-       4. WEARABLES
-       ===================================== */
     UNION ALL SELECT
         'wearables',
         'Fit Band 2',
@@ -421,9 +375,6 @@ FROM (
         'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&w=900&q=85',
         0
 
-    /* =====================================
-       5. CAMERAS
-       ===================================== */
     UNION ALL SELECT
         'cameras',
         'Mirrorless Camera M1',
@@ -466,9 +417,6 @@ FROM (
         'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=900&q=85',
         0
 
-    /* =====================================
-       6. ACCESSORIES
-       ===================================== */
     UNION ALL SELECT
         'accessories',
         'USB-C Hub 7-in-1',
@@ -520,9 +468,6 @@ WHERE NOT EXISTS (
        OR existing.sku = p.sku
 );
 
--- ============================================================
--- 12. VERIFY DATA
--- ============================================================
 SELECT
     c.name AS category,
     COUNT(p.id) AS active_products
@@ -533,7 +478,3 @@ LEFT JOIN products p
 WHERE c.is_active = 1
 GROUP BY c.id, c.name, c.sort_order
 ORDER BY c.sort_order;
-
--- Expected seed data: 16 products across 6 categories.
--- smartphones: 3, computers: 2, audio: 2,
--- wearables: 3, cameras: 3, accessories: 3.
