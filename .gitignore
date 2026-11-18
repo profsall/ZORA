@@ -1,4 +1,15 @@
-/storage/uploads/products/*
-!/storage/uploads/products/.gitkeep
-/storage/uploads/payments/*
-!/storage/uploads/payments/.gitkeep
+# Folder upload tidak dipakai karena gambar produk memakai URL eksternal.
+# Baris ini disiapkan bila fitur upload diaktifkan kembali:
+# /storage/uploads/
+
+# File konfigurasi lokal
+/config/database.local.php
+
+# File sampah sistem
+.DS_Store
+Thumbs.db
+
+# File editor
+.vscode/
+.idea/
+*.swp
