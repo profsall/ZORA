@@ -1,4 +1,4 @@
-# ZORA — Electronics Store
+# ZORA Electronics Store
 
 **ZORA** adalah website e-commerce toko alat elektronik yang dibangun menggunakan **PHP native** 
 
@@ -46,7 +46,7 @@ Aplikasi menggunakan pendekatan **server-rendered PHP**. Browser mengirimkan per
 | Jenis aplikasi | Website e-commerce / toko elektronik |
 | Konteks pengerjaan | Proyek pembelajaran Pemrograman Web (PHP native) |
 | Bahasa utama | PHP |
-| Arsitektur | Model–View–Controller (MVC) sederhana |
+| Arsitektur | Model-View-Controller (MVC) sederhana |
 | Database | MySQL / MariaDB |
 | Antarmuka | Bootstrap 5, CSS khusus, JavaScript |
 | Mata uang | Rupiah (IDR) |
@@ -195,7 +195,7 @@ ZORA/
 - Melihat seluruh produk yang berstatus aktif.
 - Mencari produk berdasarkan nama, deskripsi, atau SKU.
 - Memfilter katalog berdasarkan kategori.
-- Mengurutkan produk berdasarkan harga terendah, harga tertinggi, atau nama A–Z.
+- Mengurutkan produk berdasarkan harga terendah, harga tertinggi, atau nama A-Z.
 - Membuka detail produk berdasarkan slug.
 - Melihat harga, deskripsi, warna, SKU, serta informasi stok yang tersedia pada data produk.
 
@@ -320,7 +320,7 @@ Skrip aman dari penghapusan tabel secara otomatis, tetapi `CREATE TABLE IF NOT E
 
 ## 9. Instalasi di XAMPP
 
-### Langkah 1 — Ekstrak proyek
+### Langkah 1: Ekstrak proyek
 
 Ekstrak folder `ZORA` ke:
 
@@ -334,7 +334,7 @@ Pastikan file utama berada di:
 C:\xampp\htdocs\ZORA\public\index.php
 ```
 
-### Langkah 2 — Jalankan server
+### Langkah 2: Jalankan server
 
 Buka XAMPP Control Panel, lalu aktifkan:
 
@@ -343,7 +343,7 @@ Buka XAMPP Control Panel, lalu aktifkan:
 
 Pastikan keduanya berjalan tanpa konflik port.
 
-### Langkah 3 — Buat database dan tabel
+### Langkah 3: Buat database dan tabel
 
 1. Buka `http://localhost/phpmyadmin`.
 2. Pilih tab **Import**.
@@ -354,7 +354,7 @@ Pastikan keduanya berjalan tanpa konflik port.
 
 Skrip akan membuat database `zora` secara otomatis. Jalankan pada database baru untuk instalasi pertama. Jangan menghapus database lama sebelum melakukan backup.
 
-### Langkah 4 — Periksa koneksi database
+### Langkah 4: Periksa koneksi database
 
 Buka `config/database.php`. Konfigurasi default untuk instalasi XAMPP standar adalah:
 
@@ -367,7 +367,7 @@ $dbPass = '';
 
 Sesuaikan `$dbUser` dan `$dbPass` bila MySQL lokal menggunakan username atau password berbeda.
 
-### Langkah 5 — Buka aplikasi
+### Langkah 5: Buka aplikasi
 
 Buka URL utama:
 
@@ -601,4 +601,4 @@ Pengembangan berikutnya dapat dilakukan secara bertahap:
 
 Proyek ini disusun untuk kebutuhan pembelajaran dan pengembangan website e-commerce ZORA. Pastikan seluruh gambar, logo, font, dan aset eksternal yang digunakan pada versi publik memiliki hak penggunaan yang sesuai.
 
-**ZORA — Electronics for Everyday Life.**
+**ZORA Electronics for Everyday Life.**
