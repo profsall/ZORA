@@ -244,9 +244,9 @@ FROM (
         7499000 AS price,
         7999000 AS compare_at_price,
         20 AS stock,
-        'Silver' AS color,
+        'Blue' AS color,
         'POPULAR' AS tag,
-        'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?auto=format&fit=crop&w=900&q=85' AS image_url,
+        'https://img01.huaweifile.com/sg/ms/id/pms/uomcdn/ID_B2B2C/pms/202610/gbom/6942711320531/group/428_428_27B73916CA342D0C6A13AC3172573598.webp' AS image_url,
         0 AS is_featured
 
     UNION ALL SELECT
