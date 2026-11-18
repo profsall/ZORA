@@ -117,21 +117,4 @@ class User
 
         return $pengguna;
     }
-
-
-    /**
-     * Memperbarui nama dan nomor telepon pengguna.
-     */
-    public static function updateProfile($id, $nama, $telepon)
-    {
-        $pdo = db();
-
-        $sql = "UPDATE users SET name = :nama, phone = :telepon WHERE id = :id";
-        $query = $pdo->prepare($sql);
-        $query->execute([
-            'nama'    => $nama,
-            'telepon' => $telepon,
-            'id'      => $id,
-        ]);
-    }
 }

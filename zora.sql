@@ -2,7 +2,7 @@
 -- ZORA ELECTRONICS STORE
 -- FULL DATABASE SCHEMA + DEMO ADMIN + 16 SAMPLE PRODUCTS
 -- No DROP TABLE: existing records are not intentionally deleted.
--- Target database name follows config/database.php: pemweb-teori
+-- Target database name follows config/database.php: zora
 -- ============================================================
 
 CREATE DATABASE IF NOT EXISTS `zora`
@@ -85,48 +85,7 @@ CREATE TABLE IF NOT EXISTS products (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
--- 4. PRODUCT IMAGES
--- ============================================================
-CREATE TABLE IF NOT EXISTS product_images (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    product_id BIGINT UNSIGNED NOT NULL,
-    image_url VARCHAR(500) NOT NULL,
-    alt_text VARCHAR(255) DEFAULT NULL,
-    sort_order INT NOT NULL DEFAULT 0,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    KEY idx_product_images_product (product_id, sort_order),
-    CONSTRAINT fk_product_images_product
-        FOREIGN KEY (product_id) REFERENCES products(id)
-        ON UPDATE CASCADE ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- ============================================================
--- 5. USER ADDRESSES
--- ============================================================
-CREATE TABLE IF NOT EXISTS user_addresses (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    user_id BIGINT UNSIGNED NOT NULL,
-    label VARCHAR(80) DEFAULT 'Rumah',
-    recipient_name VARCHAR(150) NOT NULL,
-    recipient_phone VARCHAR(30) NOT NULL,
-    address TEXT NOT NULL,
-    city VARCHAR(100) NOT NULL,
-    province VARCHAR(100) DEFAULT NULL,
-    postal_code VARCHAR(15) DEFAULT NULL,
-    is_default TINYINT(1) NOT NULL DEFAULT 0,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    KEY idx_user_addresses_user (user_id),
-    CONSTRAINT fk_user_addresses_user
-        FOREIGN KEY (user_id) REFERENCES users(id)
-        ON UPDATE CASCADE ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- ============================================================
--- 6. CARTS
+-- 4. CARTS
 -- ============================================================
 CREATE TABLE IF NOT EXISTS carts (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -145,7 +104,7 @@ CREATE TABLE IF NOT EXISTS carts (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
--- 7. CART ITEMS
+-- 5. CART ITEMS
 -- Unique cart/product is required by Cart::add() ON DUPLICATE KEY.
 -- ============================================================
 CREATE TABLE IF NOT EXISTS cart_items (
@@ -169,7 +128,7 @@ CREATE TABLE IF NOT EXISTS cart_items (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
--- 8. ORDERS
+-- 6. ORDERS
 -- ============================================================
 CREATE TABLE IF NOT EXISTS orders (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -204,7 +163,7 @@ CREATE TABLE IF NOT EXISTS orders (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
--- 9. ORDER ITEMS
+-- 7. ORDER ITEMS
 -- Product details are stored as a snapshot for order history.
 -- ============================================================
 CREATE TABLE IF NOT EXISTS order_items (
@@ -230,7 +189,7 @@ CREATE TABLE IF NOT EXISTS order_items (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
--- 10. PAYMENTS
+-- 8. PAYMENTS
 -- ============================================================
 CREATE TABLE IF NOT EXISTS payments (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -240,7 +199,6 @@ CREATE TABLE IF NOT EXISTS payments (
         NOT NULL DEFAULT 'pending',
     amount DECIMAL(14,2) NOT NULL DEFAULT 0.00,
     payment_reference VARCHAR(150) DEFAULT NULL,
-    proof_image VARCHAR(500) DEFAULT NULL,
     paid_at DATETIME DEFAULT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -254,26 +212,7 @@ CREATE TABLE IF NOT EXISTS payments (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
--- 11. WISHLIST ITEMS
--- ============================================================
-CREATE TABLE IF NOT EXISTS wishlist_items (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    user_id BIGINT UNSIGNED NOT NULL,
-    product_id BIGINT UNSIGNED NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    UNIQUE KEY uq_wishlist_user_product (user_id, product_id),
-    KEY idx_wishlist_product (product_id),
-    CONSTRAINT fk_wishlist_user
-        FOREIGN KEY (user_id) REFERENCES users(id)
-        ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_wishlist_product
-        FOREIGN KEY (product_id) REFERENCES products(id)
-        ON UPDATE CASCADE ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- ============================================================
--- 12. SEED ADMIN USER
+-- 9. SEED ADMIN USER
 -- Email: admin@zora.test
 -- Password: AdminZora123!
 -- INSERT IGNORE does not overwrite an existing account.
@@ -290,7 +229,7 @@ INSERT IGNORE INTO users (
 );
 
 -- ============================================================
--- 13. SEED SIX PRODUCT CATEGORIES
+-- 10. SEED SIX PRODUCT CATEGORIES
 -- ============================================================
 INSERT INTO categories (name, slug, description, sort_order)
 VALUES
@@ -306,7 +245,7 @@ ON DUPLICATE KEY UPDATE
     sort_order = VALUES(sort_order);
 
 -- ============================================================
--- 14. SEED 16 PRODUCTS
+-- 11. SEED 16 PRODUCTS
 -- Data follows the product list requested for ZORA.
 -- Re-running this section will not duplicate the same slug or SKU.
 -- ============================================================
@@ -582,7 +521,7 @@ WHERE NOT EXISTS (
 );
 
 -- ============================================================
--- 15. VERIFY DATA
+-- 12. VERIFY DATA
 -- ============================================================
 SELECT
     c.name AS category,

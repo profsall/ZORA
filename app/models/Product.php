@@ -47,22 +47,6 @@ class Product
         }
 
         // ------------------------------------------------------------
-        // Filter 3: harga terendah
-        // ------------------------------------------------------------
-        if (isset($filter['min_price']) && $filter['min_price'] !== '') {
-            $kondisi[] = "p.price >= :harga_min";
-            $nilai['harga_min'] = (float) $filter['min_price'];
-        }
-
-        // ------------------------------------------------------------
-        // Filter 4: harga tertinggi
-        // ------------------------------------------------------------
-        if (isset($filter['max_price']) && $filter['max_price'] !== '') {
-            $kondisi[] = "p.price <= :harga_max";
-            $nilai['harga_max'] = (float) $filter['max_price'];
-        }
-
-        // ------------------------------------------------------------
         // Urutan tampil produk
         // Nilai sort sudah disaring di controller, jadi aman dipakai langsung.
         // ------------------------------------------------------------
@@ -252,9 +236,14 @@ class Product
     {
         $pdo = db();
 
+        // Buat slug baru dari nama produk, pastikan bentroknya dengan produk LAIN.
+        // Produk ini sendiri tidak dihitung, jadi simpan nama lama untuk perbandingan.
+        $slug = self::buatSlugUnikUntukEdit($id, $data['name']);
+
         $sql = "UPDATE products SET
                     category_id      = :category_id,
                     name             = :name,
+                    slug             = :slug,
                     sku              = :sku,
                     description      = :description,
                     price            = :price,
@@ -271,6 +260,7 @@ class Product
         $query->execute([
             'category_id'      => $data['category_id'],
             'name'             => $data['name'],
+            'slug'             => $slug,
             'sku'              => $data['sku'],
             'description'      => $data['description'],
             'price'            => $data['price'],
@@ -330,6 +320,53 @@ class Product
         }
 
         return $slug;
+    }
+
+
+    /**
+     * Membuat slug untuk proses edit produk.
+     *
+     * Beda dengan buatSlugUnik(), di sini produk yang sedang diedit
+     * tidak dihitung sebagai pemakai slug. Jadi kalau nama produk
+     * tidak berubah, slug lamanya tetap dipertahankan.
+     */
+    private static function buatSlugUnikUntukEdit($idProduk, $namaProduk)
+    {
+        $slugDasar = slugify($namaProduk);
+        $slug = $slugDasar;
+        $angka = 2;
+
+        // Ulangi selama slug masih dipakai produk LAIN
+        while (self::slugDipakaiProdukLain($slug, $idProduk)) {
+            $slug = $slugDasar . '-' . $angka;
+            $angka = $angka + 1;
+        }
+
+        return $slug;
+    }
+
+
+    /**
+     * Memeriksa apakah slug sudah dipakai produk lain.
+     * Produk dengan ID $idProduk sendiri tidak dihitung.
+     */
+    private static function slugDipakaiProdukLain($slug, $idProduk)
+    {
+        $pdo = db();
+
+        $sql = "SELECT COUNT(*) FROM products
+                WHERE slug = :slug
+                  AND id <> :id";
+
+        $query = $pdo->prepare($sql);
+        $query->execute([
+            'slug' => $slug,
+            'id'   => $idProduk,
+        ]);
+
+        $jumlah = (int) $query->fetchColumn();
+
+        return $jumlah > 0;
     }
 
 

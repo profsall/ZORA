@@ -38,12 +38,12 @@ function db()
 
     // Pengaturan PDO:
     // - Kalau ada error, langsung dilempar sebagai exception
-    //$koneksi->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $koneksi->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     // - Hasil query berbentuk array dengan nama kolom sebagai kunci
-    //$koneksi->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    $koneksi->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
     // - Matikan emulasi supaya prepared statement benar-benar asli dari MySQL
-    //   (ini yang membuat query aman dari SQL Injection)
-    //$koneksi->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+    //   (parameter dikirim terpisah dari query, bukan disisipkan oleh PHP)
+    $koneksi->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
 
     return $koneksi;
 }

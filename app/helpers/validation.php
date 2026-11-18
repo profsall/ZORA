@@ -43,19 +43,6 @@ function required_value($nilai)
 
 
 /**
- * Memeriksa apakah nilai berupa bilangan bulat positif (lebih dari 0).
- */
-function positive_int($nilai)
-{
-    if (filter_var($nilai, FILTER_VALIDATE_INT) === false) {
-        return false;
-    }
-
-    return (int) $nilai > 0;
-}
-
-
-/**
  * Memeriksa apakah URL gambar menggunakan http atau https.
  */
 function valid_image_url($url)
