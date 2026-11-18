@@ -258,9 +258,9 @@ FROM (
         3299000,
         3599000,
         30,
-        'White',
+        'Silver',
         'NEW',
-        'https://images.unsplash.com/photo-1512499617640-c74ae3a79d37?auto=format&fit=crop&w=900&q=85',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ8QtrA1ffrZYP-6VFvrAoMPWfRjXRgUOjC9kntXaJyvQ&s=10',
         0
 
     UNION ALL SELECT
@@ -272,9 +272,9 @@ FROM (
         9999000,
         10999000,
         10,
-        'Black',
+        'Gray',
         'NEW',
-        'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=85',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ8QtrA1ffrZYP-6VFvrAoMPWfRjXRgUOjC9kntXaJyvQ&s=105',
         0
 
     UNION ALL SELECT
@@ -286,9 +286,9 @@ FROM (
         14999000,
         15999000,
         10,
-        'Space Gray',
+        'Black',
         'POPULAR',
-        'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=85',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTNLM-5SR9ckrcIzcB4wMVYExskWy8lOOKf_uBeY5tXHQ&s=10',
         0
 
     UNION ALL SELECT
@@ -300,9 +300,9 @@ FROM (
         6499000,
         6999000,
         15,
-        'Silver',
+        'Black',
         'NEW',
-        'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=900&q=85',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT1IigT2R7GX4Zz9Y7xewpux1kwUmw9tECsUXNBJzp2Xg&s=10',
         0
 
     UNION ALL SELECT
@@ -316,7 +316,7 @@ FROM (
         35,
         'White',
         'NEW',
-        'https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?auto=format&fit=crop&w=900&q=85',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTMPZWsKrge8b9QNJfiG8Ov9DEgK98xeIgXBcWiqlrbeQ&s=10',
         0
 
     UNION ALL SELECT
@@ -330,7 +330,7 @@ FROM (
         25,
         'Black',
         NULL,
-        'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=900&q=85',
+        'https://id.jbl.com/dw/image/v2/AAUJ_PRD/on/demandware.static/-/Sites-masterCatalog_Harman/default/dwb2062edf/JBL_Go2_Detailshot02_Midnight_Black-1605x1605px.png?sw=537&sfrm=png',
         0
 
     UNION ALL SELECT
@@ -342,9 +342,9 @@ FROM (
         699000,
         799000,
         30,
-        'Black',
+        'White',
         'NEW',
-        'https://images.unsplash.com/photo-1544117519-31a4b719223d?auto=format&fit=crop&w=900&q=85',
+        'https://down-id.img.susercontent.com/file/id-11134207-7rasi-m2fbkn2hgak4b6',
         0
 
     UNION ALL SELECT
@@ -356,9 +356,9 @@ FROM (
         2599000,
         2899000,
         18,
-        'Silver',
+        'Black',
         'POPULAR',
-        'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?auto=format&fit=crop&w=900&q=85',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRa9PVpOFSnqyPRbfKItat9l6FBk32-frAxVs064O-LgA&s=10',
         0
 
     UNION ALL SELECT
@@ -370,9 +370,9 @@ FROM (
         1899000,
         NULL,
         12,
-        'Titanium',
+        'Black',
         'NEW',
-        'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&w=900&q=85',
+        'https://images.samsung.com/is/image/samsung/assets/id/offer/2024/10/galaxy-ring/01-1_Ring_Image_Gallary_Titanium_Black_Front_MO.jpg',
         0
 
     UNION ALL SELECT
@@ -400,7 +400,7 @@ FROM (
         14,
         'Black',
         'NEW',
-        'https://images.unsplash.com/photo-1510127034890-2eea7e4c6a69?auto=format&fit=crop&w=900&q=85',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTNqvalp6cUNK3-0d7XqYz1M45mA4PfA9mboq6qG_aZhA&s=10',
         0
 
     UNION ALL SELECT
@@ -412,9 +412,9 @@ FROM (
         2499000,
         NULL,
         11,
-        'White',
+        'Blue',
         NULL,
-        'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=900&q=85',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRoUi9U1a9JNbofZP04nrfv7S3d2OpMPEV_uZ3cJKbFZUMAU4lRxtAEvZUh&s=10',
         0
 
     UNION ALL SELECT
@@ -426,9 +426,9 @@ FROM (
         899000,
         999000,
         40,
-        'Silver',
+        'Gray',
         'NEW',
-        'https://images.unsplash.com/photo-1625842268584-8f3296236761?auto=format&fit=crop&w=900&q=85',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRz3AFvCfMZH7-V0bPF4gwYvMxLps36RjxJ62Va7ETtLg&s=10',
         0
 
     UNION ALL SELECT
@@ -440,9 +440,9 @@ FROM (
         599000,
         699000,
         25,
-        'White',
+        'Red',
         'POPULAR',
-        'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=900&q=85',
+        'https://m.media-amazon.com/images/I/710B-MnAc9L.jpg',
         0
 
     UNION ALL SELECT
@@ -456,7 +456,7 @@ FROM (
         45,
         'Black',
         NULL,
-        'https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?auto=format&fit=crop&w=900&q=85',
+        'https://media.dinomarket.com/docs/imgTD/2025-11/DM_AAFC5EAAF5CB2B62D6588AD3C995EBCC_221125161117_ll.jpg',
         0
 ) AS p
 INNER JOIN categories c
