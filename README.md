@@ -1,6 +1,6 @@
 # ZORA — Electronics Store
 
-**ZORA** adalah website e-commerce toko alat elektronik yang dibangun menggunakan **PHP native** dengan pola arsitektur **Model–View–Controller (MVC)**, MySQL/MariaDB melalui PDO, Bootstrap 5, CSS, dan JavaScript. Tidak ada framework dan tidak ada library tambahan — semua ditulis langsung.
+**ZORA** adalah website e-commerce toko alat elektronik yang dibangun menggunakan **PHP native** 
 
 Proyek ini dibuat untuk memenuhi tugas mata kuliah Pemrograman Web, dengan ketentuan memakai HTML, PHP, JavaScript, CSS, dan MySQL/MariaDB. Desain antarmuka mengambil inspirasi dari pendekatan visual retail UNIQLO: tata letak bersih, navigasi ringkas, ruang kosong yang cukup, hierarki teks yang jelas, serta fokus pada foto dan informasi produk. Identitas visual ZORA menggunakan kombinasi **biru, putih, dan abu-abu muda**, bukan merah-putih.
 
