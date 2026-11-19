@@ -36,7 +36,7 @@
                 <input type="password" name="password_confirmation" minlength="8" required>
             </label>
 
-            <button class="btn-zora w-100">Buat akun →</button>
+            <button class="btn-zora w-100"> Buat akun </button>
         </form>
 
         <p class="auth-switch">Sudah punya akun? <a href="<?= base_url('login') ?>">Masuk</a></p>

@@ -1,7 +1,4 @@
 <?php
-/**
- * Hitung ongkir untuk ditampilkan di ringkasan keranjang.
- */
 $ongkir = hitung_ongkir($subtotal);
 $totalSementara = $subtotal + $ongkir;
 ?>
@@ -20,7 +17,7 @@ $totalSementara = $subtotal + $ongkir;
         <div class="empty-state compact">
             <h3>Keranjangmu masih kosong</h3>
             <p>Temukan perangkat yang sesuai dengan kebutuhanmu.</p>
-            <a class="btn-zora" href="<?= base_url('products') ?>">Mulai belanja →</a>
+            <a class="btn-zora" href="<?= base_url('products') ?>">Mulai belanja</a>
         </div>
 
     <?php else: ?>
@@ -96,7 +93,7 @@ $totalSementara = $subtotal + $ongkir;
                     <strong><?= rupiah($totalSementara) ?></strong>
                 </div>
 
-                <a class="btn-zora w-100" href="<?= base_url('checkout') ?>">Lanjut checkout →</a>
+                <a class="btn-zora w-100" href="<?= base_url('checkout') ?>"> Lanjut checkout </a>
             </aside>
 
         </div>

@@ -100,7 +100,7 @@
         <div class="empty-state compact">
             <h3>Produk belum ditemukan</h3>
             <p>Coba kata kunci atau kategori yang berbeda.</p>
-            <a href="<?= base_url('products') ?>" class="text-link">Lihat semua produk →</a>
+            <a href="<?= base_url('products') ?>" class="text-link"> Lihat semua produk </a>
         </div>
     <?php endif; ?>
 

@@ -70,7 +70,7 @@ if (!$warna) {
                     <input type="number" name="quantity" value="1" min="1" max="<?= (int) $product['stock'] ?>">
                 </label>
 
-                <button class="btn-zora">Tambah ke keranjang <span>→</span></button>
+                <button class="btn-zora">Tambah ke keranjang <span></span></button>
             </form>
         <?php else: ?>
             <button class="btn-zora" disabled>Stok habis</button>

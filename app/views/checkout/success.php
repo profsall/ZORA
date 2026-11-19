@@ -6,5 +6,5 @@
         Pesanan <strong><?= e($order['order_number']) ?></strong> berhasil dibuat.
         Status awal pesanan adalah menunggu konfirmasi.
     </p>
-    <a class="btn-zora" href="<?= base_url('orders') ?>">Lihat pesanan →</a>
+    <a class="btn-zora" href="<?= base_url('orders') ?>">Lihat pesanan</a>
 </section>

@@ -98,7 +98,7 @@
 
             </div>
 
-            <button class="btn-zora w-100">Buat pesanan →</button>
+            <button class="btn-zora w-100">Buat pesanan</button>
         </form>
 
 

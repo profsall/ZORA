@@ -24,7 +24,7 @@
                 <input type="password" name="password" required autocomplete="current-password">
             </label>
 
-            <button class="btn-zora w-100">Masuk →</button>
+            <button class="btn-zora w-100"> Masuk </button>
         </form>
 
         <p class="auth-switch">Belum punya akun? <a href="<?= base_url('register') ?>">Daftar sekarang</a></p>
