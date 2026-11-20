@@ -1,8 +1,5 @@
 <?php
-/**
- * Halaman kelola produk admin.
- * Berisi form tambah produk dan tabel semua produk.
- */
+// Halaman kelola produk admin. Berisi form tambah produk dan tabel semua produk.
 ?>
 <section class="container standard-page admin-page">
 
@@ -14,7 +11,7 @@
 
     <div class="admin-product-layout">
 
-        <!-- ================= FORM TAMBAH PRODUK ================= -->
+        <!-- Tambah Produk -->
         <form class="form-card" method="post" action="<?= base_url('admin/products/create') ?>">
             <?= csrf_field() ?>
 
@@ -101,7 +98,7 @@
         </form>
 
 
-        <!-- ================= DAFTAR PRODUK ================= -->
+        <!-- Daftar Produk -->
         <div class="admin-product-list">
 
             <h3>Semua produk (<?= count($products) ?>)</h3>

@@ -1,14 +1,8 @@
 <?php
-/**
- * CONTROLLER BERANDA
- * ==================
- * Menyiapkan data untuk halaman utama (homepage).
- */
+  //Menyiapkan data untuk halaman utama (homepage).
 class HomeController
 {
-    /**
-     * Menampilkan halaman beranda.
-     */
+  // menampilkan halaman beranda
     public function index()
     {
         // Ambil 4 produk unggulan untuk ditampilkan di beranda

@@ -1,9 +1,5 @@
 <?php
-/**
- * FOOTER HALAMAN
- * ==============
- * Bagian bawah setiap halaman: footer dan file JavaScript.
- */
+// Bagian bawah setiap halaman: footer dan file JavaScript.
 ?>
 </main>
 

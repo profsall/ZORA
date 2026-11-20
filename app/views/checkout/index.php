@@ -7,7 +7,7 @@
     </div>
 
 
-    <!-- ================= PESAN ERROR ================= -->
+    <!-- PESAN ERROR -->
     <?php if (!empty($errors)): ?>
         <div class="alert alert-danger">
             <?php foreach ($errors as $err): ?>
@@ -19,7 +19,7 @@
 
     <div class="checkout-layout">
 
-        <!-- ================= FORM CHECKOUT ================= -->
+        <!-- Form Checkout -->
         <form class="form-card" method="post" action="<?= base_url('checkout') ?>">
             <?= csrf_field() ?>
 
@@ -102,7 +102,7 @@
         </form>
 
 
-        <!-- ================= RINGKASAN PESANAN ================= -->
+        <!-- Ringkasan Pesanan -->
         <aside class="summary-card">
             <h3>Pesananmu</h3>
 

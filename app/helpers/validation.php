@@ -1,12 +1,5 @@
 <?php
-/**
- * FUNGSI VALIDASI INPUT
- * =====================
- * Fungsi untuk memeriksa apakah data yang dikirim pengguna
- * sudah sesuai aturan sebelum disimpan ke database.
- */
-
-
+// Fungsi untuk memeriksa apakah data yang dikirim pengguna sudah sesuai aturan sebelum disimpan ke database.
 /**
  * Memeriksa apakah format email sudah benar.
  *
@@ -22,29 +15,20 @@ function valid_email($email)
     return true;
 }
 
-
-/**
- * Memeriksa panjang password minimal 8 karakter.
- */
+// Memeriksa panjang password minimal 8 karakter.
 function valid_password($password)
 {
     return strlen($password) >= 8;
 }
 
-
-/**
- * Memeriksa apakah input wajib sudah diisi.
- * Spasi saja dianggap kosong.
- */
+// Memeriksa apakah input wajib sudah diisi.
+// Spasi saja dianggap kosong.
 function required_value($nilai)
 {
     return trim((string) $nilai) !== '';
 }
 
-
-/**
- * Memeriksa apakah URL gambar menggunakan http atau https.
- */
+// Memeriksa apakah URL gambar menggunakan http atau https.
 function valid_image_url($url)
 {
     if (filter_var($url, FILTER_VALIDATE_URL) === false) {

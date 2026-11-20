@@ -1,7 +1,5 @@
 <?php
-/**
- * Ambil data pengguna yang sedang login.
- */
+// Ambil data pengguna yang sedang login.
 $pengguna = current_user();
 
 // Nomor telepon, tampilkan keterangan kalau belum diisi
@@ -21,7 +19,7 @@ if (!$telepon) {
 
     <div class="account-grid">
 
-        <!-- ================= INFORMASI AKUN ================= -->
+        <!-- Infomasi Akun -->
         <div class="account-panel">
             <h3>Informasi akun</h3>
 
@@ -41,7 +39,7 @@ if (!$telepon) {
             </p>
         </div>
 
-        <!-- ================= MENU AKUN ================= -->
+        <!-- Menu Akun -->
         <div class="account-panel account-links">
             <h3>Menu akun</h3>
 

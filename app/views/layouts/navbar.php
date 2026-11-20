@@ -1,10 +1,5 @@
 <?php
-/**
- * NAVBAR (MENU ATAS)
- * ==================
- * Menu navigasi yang muncul di bagian atas semua halaman.
- */
-
+//Menu navigasi yang muncul di bagian atas semua halaman.
 // Ambil nama depan pengguna yang sedang login
 $namaDepan = '';
 

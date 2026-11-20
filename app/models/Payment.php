@@ -1,15 +1,8 @@
 <?php
-/**
- * MODEL PEMBAYARAN
- * ================
- * Mengelola data tabel "payments".
- */
+// Mengelola data tabel "payments".
 class Payment
 {
-    /**
-     * Mencatat pembayaran baru untuk sebuah pesanan.
-     * Status awalnya selalu "pending" (menunggu pembayaran).
-     */
+    // Mencatat pembayaran baru untuk sebuah pesanan. Status awalnya selalu "pending" (menunggu pembayaran).
     public static function create($orderId, $metode, $jumlah)
     {
         // Metode pembayaran yang diperbolehkan
@@ -37,11 +30,7 @@ class Payment
         return (int) $pdo->lastInsertId();
     }
 
-
-    /**
-     * Mengambil data pembayaran terbaru dari sebuah pesanan.
-     * Hasilnya null kalau belum ada data pembayaran.
-     */
+    // Mengambil data pembayaran terbaru dari sebuah pesanan. Hasilnya null kalau belum ada data pembayaran.
     public static function forOrder($orderId)
     {
         $pdo = db();

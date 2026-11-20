@@ -1,18 +1,11 @@
 <?php
-/**
- * MODEL KATEGORI
- * ==============
- * Mengelola data tabel "categories".
- * Model adalah bagian yang berhubungan langsung dengan database.
- */
+// Mengelola data tabel "categories".
+// Model adalah bagian yang berhubungan langsung dengan database.
 class Category
 {
-    /**
-     * Mengambil semua kategori.
-     *
-     * $hanyaAktif = true  -> hanya kategori yang aktif saja
-     * $hanyaAktif = false -> semua kategori (dipakai di halaman admin)
-     */
+    // Mengambil semua kategori.
+    // $hanyaAktif = true  -> hanya kategori yang aktif saja
+    // $hanyaAktif = false -> semua kategori (dipakai di halaman admin)
     public static function all($hanyaAktif = true)
     {
         $pdo = db();
@@ -44,10 +37,7 @@ class Category
     }
 
 
-    /**
-     * Mengambil satu kategori berdasarkan ID.
-     * Hasilnya null kalau kategori tidak ditemukan.
-     */
+    // Mengambil satu kategori berdasarkan ID. Hasilnya null kalau kategori tidak ditemukan.
     public static function find($id)
     {
         $pdo = db();

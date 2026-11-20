@@ -1,14 +1,8 @@
 <?php
-/**
- * CONTROLLER PESANAN
- * ==================
- * Menampilkan riwayat pesanan dan detail pesanan milik pelanggan.
- */
+// Menampilkan riwayat pesanan dan detail pesanan milik pelanggan.
 class OrderController
 {
-    /**
-     * Menampilkan daftar riwayat pesanan milik pelanggan.
-     */
+    // Menampilkan daftar riwayat pesanan milik pelanggan.
     public function index()
     {
         require_login();
@@ -25,9 +19,7 @@ class OrderController
     }
 
 
-    /**
-     * Menampilkan detail satu pesanan.
-     */
+    // Menampilkan detail satu pesanan.
     public function show($id)
     {
         require_login();

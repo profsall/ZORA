@@ -9,7 +9,7 @@
 
 <section class="container catalog-section">
 
-    <!-- ================= FORM FILTER ================= -->
+    <!-- FORM FILTER -->
     <form class="filter-bar" method="get" action="<?= base_url('products') ?>">
 
         <input type="hidden" name="url" value="products">
@@ -62,14 +62,14 @@
     </form>
 
 
-    <!-- ================= INFO HASIL ================= -->
+    <!-- INFO HASIL -->
     <div class="catalog-meta">
         <span><?= count($products) ?> produk ditemukan</span>
         <a href="<?= base_url('products') ?>">Reset filter</a>
     </div>
 
 
-    <!-- ================= DAFTAR PRODUK ================= -->
+    <!-- DAFTAR PRODUK -->
     <div class="product-grid">
         <?php foreach ($products as $product): ?>
             <article class="product-card">
@@ -95,7 +95,7 @@
     </div>
 
 
-    <!-- ================= JIKA TIDAK ADA HASIL ================= -->
+    <!-- JIKA TIDAK ADA HASIL -->
     <?php if (!$products): ?>
         <div class="empty-state compact">
             <h3>Produk belum ditemukan</h3>

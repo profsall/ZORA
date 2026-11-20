@@ -26,7 +26,7 @@
 </section>
 
 
-<!-- ================= KATEGORI ================= -->
+<!-- KATEGORI -->
 <section class="category-section container">
 
     <div class="section-heading">
@@ -50,7 +50,7 @@
 </section>
 
 
-<!-- ================= PRODUK PILIHAN ================= -->
+<!-- PRODUK PILIHAN -->
 <section class="featured-section">
     <div class="container">
 
@@ -91,7 +91,7 @@
 </section>
 
 
-<!-- ================= KEUNGGULAN ================= -->
+<!-- KEUNGGULAN -->
 <section class="service-strip container">
     <div>
         <span>01</span>

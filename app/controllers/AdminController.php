@@ -1,15 +1,11 @@
 <?php
-/**
- * CONTROLLER ADMIN
- * ================
- * Menangani semua halaman khusus administrator:
- * dashboard, kelola produk, dan ubah status pesanan.
- */
+ /* Menangani semua halaman khusus administrator:
+ dashboard, kelola produk, dan ubah status pesanan.*/
+  
 class AdminController
 {
-    /**
-     * Halaman dashboard admin.
-     */
+    
+    //Halaman dashboard admin.
     public function index()
     {
         require_admin();
@@ -28,9 +24,8 @@ class AdminController
     }
 
 
-    /**
-     * Halaman kelola produk: daftar produk + form tambah produk.
-     */
+
+    // Halaman kelola produk: daftar produk + form tambah produk.
     public function products()
     {
         require_admin();
@@ -43,9 +38,7 @@ class AdminController
     }
 
 
-    /**
-     * Menyimpan produk baru dari form.
-     */
+    // Menyimpan produk baru dari form.
     public function createProduct()
     {
         require_admin();
@@ -82,9 +75,9 @@ class AdminController
     }
 
 
-    /**
-     * Halaman formulir edit produk.
-     */
+
+    // Halaman formulir edit produk.
+    
     public function editProduct($id)
     {
         require_admin();
@@ -111,9 +104,8 @@ class AdminController
     }
 
 
-    /**
-     * Menyimpan perubahan produk dari form edit.
-     */
+ 
+    // Menyimpan perubahan produk dari form edit.
     public function updateProduct()
     {
         require_admin();
@@ -158,9 +150,8 @@ class AdminController
     }
 
 
-    /**
-     * Mengarsipkan produk.
-     */
+
+    // Mengarsipkan produk.
     public function deleteProduct()
     {
         require_admin();
@@ -193,9 +184,8 @@ class AdminController
     }
 
 
-    /**
-     * Mengaktifkan kembali produk yang sudah diarsipkan.
-     */
+
+    // Mengaktifkan kembali produk yang sudah diarsipkan.
     public function restoreProduct()
     {
         require_admin();
@@ -228,9 +218,7 @@ class AdminController
     }
 
 
-    /**
-     * Mengubah status sebuah pesanan.
-     */
+    // Mengubah status sebuah pesanan.
     public function updateOrderStatus()
     {
         require_admin();
@@ -273,9 +261,7 @@ class AdminController
     }
 
 
-    /**
-     * Menghitung statistik untuk dashboard admin.
-     */
+    // Menghitung statistik untuk dashboard admin.
     private function ambilStatistik()
     {
         $pdo = db();

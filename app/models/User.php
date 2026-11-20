@@ -1,16 +1,8 @@
 <?php
-/**
- * MODEL PENGGUNA
- * ==============
- * Mengelola data tabel "users".
- * Dipakai untuk daftar akun, login, dan profil.
- */
+// Mengelola data tabel "users". Dipakai untuk daftar akun, login, dan profil.
 class User
 {
-    /**
-     * Mencari pengguna berdasarkan email.
-     * Hasilnya null kalau email tidak terdaftar.
-     */
+    // Mencari pengguna berdasarkan email. Hasilnya null kalau email tidak terdaftar.
     public static function findByEmail($email)
     {
         $pdo = db();
@@ -30,11 +22,7 @@ class User
         return $hasil;
     }
 
-
-    /**
-     * Mengambil data pengguna berdasarkan ID.
-     * Password (hash) sengaja tidak diambil demi keamanan.
-     */
+    // Mengambil data pengguna berdasarkan ID. Password (hash) sengaja tidak diambil demi keamanan.
     public static function find($id)
     {
         $pdo = db();
@@ -57,13 +45,8 @@ class User
     }
 
 
-    /**
-     * Mendaftarkan pengguna baru.
-     * Role selalu "customer" dan status "active".
-     *
-     * Password diubah dulu menjadi hash memakai password_hash(),
-     * jadi password asli tidak pernah tersimpan di database.
-     */
+    // Mendaftarkan pengguna baru. Role selalu "customer" dan status "active".
+    // Password diubah dulu menjadi hash memakai password_hash().
     public static function create($nama, $email, $telepon, $password)
     {
         $pdo = db();
@@ -82,12 +65,8 @@ class User
         return (int) $pdo->lastInsertId();
     }
 
-
-    /**
-     * Memeriksa email dan password saat login.
-     *
-     * Hasilnya data pengguna kalau berhasil, atau null kalau gagal.
-     */
+    // Memeriksa email dan password saat login.
+    // Hasilnya data pengguna kalau berhasil, atau null kalau gagal.
     public static function authenticate($email, $password)
     {
         $pengguna = self::findByEmail($email);

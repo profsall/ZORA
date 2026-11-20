@@ -1,9 +1,5 @@
 <?php
-/**
- * Dashboard administrator.
- * Menampilkan statistik toko dan daftar pesanan terbaru.
- */
-
+// Dashboard administrator. Menampilkan statistik toko dan daftar pesanan terbaru.
 // Status yang bisa dipilih admin saat mengubah pesanan
 $pilihanStatus = [
     'confirmed'  => 'Dikonfirmasi',
@@ -21,7 +17,7 @@ $pilihanStatus = [
         <p>Ringkasan aktivitas toko ZORA.</p>
     </div>
 
-    <!-- ================= STATISTIK ================= -->
+    <!-- Statistik -->
     <div class="admin-stats">
         <div>
             <small>Produk aktif</small>
@@ -46,7 +42,7 @@ $pilihanStatus = [
         <a class="btn-zora btn-small" href="<?= base_url('admin/products') ?>">Kelola produk →</a>
     </div>
 
-    <!-- ================= TABEL PESANAN ================= -->
+    <!-- Tabel Pesanan -->
     <div class="table-responsive">
         <table class="table zora-table">
             <thead>

@@ -1,11 +1,6 @@
 <?php
-/**
- * HEADER HALAMAN
- * ==============
- * Bagian atas setiap halaman: judul, CSS, dan navbar.
- * File ini otomatis dipakai oleh fungsi render().
- */
-
+// Bagian atas setiap halaman: judul, CSS, dan navbar.
+// File ini otomatis dipakai oleh fungsi render().
 // Hitung jumlah barang di keranjang untuk angka di navbar
 $cartCount = 0;
 

@@ -43,10 +43,8 @@ class ProductController
     }
 
 
-    /**
-     * Menampilkan halaman detail satu produk.
-     * Produk dicari berdasarkan slug di URL.
-     */
+     /* Menampilkan halaman detail satu produk.
+     Produk dicari berdasarkan slug di URL. */
     public function show($slug)
     {
         $slug = trim($slug);

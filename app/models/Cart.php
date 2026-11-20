@@ -1,7 +1,5 @@
 <?php
 /**
- * MODEL KERANJANG
- * ===============
  * Mengelola tabel "carts" dan "cart_items".
  *
  * Keranjang bisa dimiliki oleh dua jenis pengunjung:
@@ -10,10 +8,7 @@
  */
 class Cart
 {
-    /**
-     * Mencari ID keranjang yang sedang dipakai.
-     * Kalau belum ada, keranjang baru langsung dibuat.
-     */
+    // Mencari ID keranjang yang sedang dipakai. Kalau belum ada, keranjang baru langsung dibuat.
     private static function cartId()
     {
         $pdo = db();
@@ -26,9 +21,7 @@ class Cart
 
         $sessionId = session_id();
 
-        // ------------------------------------------------------------
         // Cari keranjang yang sudah ada
-        // ------------------------------------------------------------
         if ($userId !== null) {
             // Keranjang milik pengguna yang sudah login
             $sql = "SELECT id FROM carts
@@ -56,9 +49,8 @@ class Cart
             return (int) $cartId;
         }
 
-        // ------------------------------------------------------------
+
         // Keranjang belum ada, buat yang baru
-        // ------------------------------------------------------------
         $sql = "INSERT INTO carts (user_id, session_id, status)
                 VALUES (:user_id, :session_id, 'active')";
 

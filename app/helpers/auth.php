@@ -1,17 +1,8 @@
 <?php
-/**
- * FUNGSI LOGIN & HAK AKSES
- * ========================
- * Kumpulan fungsi untuk memeriksa siapa yang sedang login
- * dan membatasi halaman tertentu.
- */
+ // Kumpulan fungsi untuk memeriksa siapa yang sedang login dan membatasi halaman tertentu.
 
 
-/**
- * Mengambil data pengguna yang sedang login.
- *
- * Hasilnya berupa array data user, atau null kalau belum login.
- */
+// Mengambil data pengguna yang sedang login. Hasilnya berupa array data user, atau null kalau belum login.
 function current_user()
 {
     if (isset($_SESSION['user'])) {
@@ -22,9 +13,7 @@ function current_user()
 }
 
 
-/**
- * Memeriksa apakah pengunjung sudah login.
- */
+// Memeriksa apakah pengunjung sudah login
 function is_logged_in()
 {
     if (!isset($_SESSION['user']['id'])) {
@@ -35,9 +24,7 @@ function is_logged_in()
 }
 
 
-/**
- * Memeriksa apakah pengguna yang login adalah admin.
- */
+// Memeriksa apakah pengguna yang login adalah admin.
 function is_admin()
 {
     if (!is_logged_in()) {
@@ -52,10 +39,7 @@ function is_admin()
 }
 
 
-/**
- * Memaksa pengguna untuk login dulu.
- * Kalau belum login, otomatis dipindahkan ke halaman login.
- */
+// Memaksa pengguna untuk login dulu. Kalau belum login, otomatis dipindahkan ke halaman login.
 function require_login()
 {
     if (!is_logged_in()) {
@@ -64,11 +48,7 @@ function require_login()
     }
 }
 
-
-/**
- * Memaksa pengguna untuk login sebagai admin.
- * Kalau bukan admin, muncul halaman "akses ditolak".
- */
+// Memaksa pengguna untuk login sebagai admin. Kalau bukan admin, muncul halaman "akses ditolak".
 function require_admin()
 {
     // Pastikan sudah login dulu

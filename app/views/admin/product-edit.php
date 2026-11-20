@@ -1,9 +1,5 @@
 <?php
-/**
- * Halaman edit produk admin.
- * Formulir untuk mengubah data produk yang sudah ada.
- */
-
+// Halaman edit produk admin. Formulir untuk mengubah data produk yang sudah ada.
 // Status produk yang bisa dipilih
 $pilihanStatus = [
     'active'   => 'Aktif',

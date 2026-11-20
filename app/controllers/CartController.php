@@ -1,14 +1,9 @@
 <?php
-/**
- * CONTROLLER KERANJANG
- * ====================
- * Menangani halaman keranjang dan perubahan isinya.
- */
+// Menangani halaman keranjang dan perubahan isinya.
 class CartController
 {
-    /**
-     * Menampilkan halaman keranjang.
-     */
+
+    // Menampilkan halaman keranjang.
     public function index()
     {
         $daftarBarang = Cart::items();
@@ -21,9 +16,7 @@ class CartController
     }
 
 
-    /**
-     * Menambahkan produk ke keranjang.
-     */
+    // Menambahkan produk ke keranjang.
     public function add()
     {
         if (!is_post()) {
@@ -59,9 +52,7 @@ class CartController
     }
 
 
-    /**
-     * Mengubah jumlah barang di keranjang.
-     */
+    // Mengubah jumlah barang di keranjang.
     public function update()
     {
         if (!is_post()) {
@@ -95,9 +86,7 @@ class CartController
     }
 
 
-    /**
-     * Menghapus barang dari keranjang.
-     */
+    // Menghapus barang dari keranjang.
     public function remove()
     {
         if (!is_post()) {
@@ -212,9 +201,7 @@ class CartController
     }
 
 
-    /**
-     * Mengambil nama host dari alamat situs yang sedang dibuka.
-     */
+    // Mengambil nama host dari alamat situs yang sedang dibuka.
     private function hostSekarang()
     {
         $host = '';

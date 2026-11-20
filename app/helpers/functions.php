@@ -1,10 +1,5 @@
 <?php
-/**
- * FUNGSI BANTUAN UMUM
- * ===================
- * Kumpulan fungsi kecil yang dipakai di banyak halaman:
- * membuat link, menampilkan teks, format uang, dan lain-lain.
- */
+// Kumpulan fungsi kecil yang dipakai di banyak halaman: membuat link, menampilkan teks, format uang, dan lain-lain.
 
 
 /**
@@ -81,11 +76,7 @@ function base_url($tujuan = '')
 }
 
 
-/**
- * Membuat link ke file gambar, CSS, atau JavaScript.
- *
- * Contoh: asset('css/style.css')
- */
+// Membuat link ke file gambar, CSS, atau JavaScript. Contoh: asset('css/style.css')
 function asset($namaFile)
 {
     $namaFile = str_replace('\\', '/', $namaFile);
@@ -94,34 +85,24 @@ function asset($namaFile)
     return public_base_path() . '/assets/' . $namaFile;
 }
 
-
-/**
- * Pindah ke halaman lain.
- */
+// Pindah ke halaman lain.
 function redirect($tujuan)
 {
     header('Location: ' . base_url($tujuan));
     exit;
 }
 
-
-/**
- * Mengamankan teks sebelum ditampilkan ke browser.
- *
- * Dipakai supaya kode HTML seperti <script> tidak ikut dijalankan
- * ketika ditampilkan sebagai teks biasa. Ini mencegah serangan XSS.
- */
+// Mengamankan teks sebelum ditampilkan ke browser
+// Dipakai supaya kode HTML seperti <script> tidak ikut dijalankan
+// ketika ditampilkan sebagai teks biasa. Ini mencegah serangan XSS.
 function e($nilai)
 {
     return htmlspecialchars((string) $nilai, ENT_QUOTES, 'UTF-8');
 }
 
 
-/**
- * Mengubah angka menjadi format rupiah.
- *
- * Contoh: 1500000  ->  "Rp 1.500.000"
- */
+// Mengubah angka menjadi format rupiah.
+// Contoh: 1500000  ->  "Rp 1.500.000"
 function rupiah($angka)
 {
     $angka = (float) $angka;
@@ -129,11 +110,8 @@ function rupiah($angka)
 }
 
 
-/**
- * Mengubah nama produk menjadi alamat yang rapi (slug).
- *
- * Contoh: "AirBook 14 Pro"  ->  "airbook-14-pro"
- */
+// Mengubah nama produk menjadi alamat yang rapi (slug).
+// Contoh: "AirBook 14 Pro"  ->  "airbook-14-pro"
 function slugify($teks)
 {
     $teks = strtolower(trim($teks));
@@ -152,15 +130,8 @@ function slugify($teks)
     return $teks;
 }
 
-
-/**
- * Menyimpan pesan singkat untuk ditampilkan di halaman berikutnya.
- *
- * Pesan hanya muncul satu kali, setelah dibaca langsung dihapus.
- *
- * Menyimpan pesan : flash('success', 'Data berhasil disimpan');
- * Mengambil pesan : $pesan = flash('success');
- */
+// Menyimpan pesan singkat untuk ditampilkan di halaman berikutnya.
+// Pesan hanya muncul satu kali, setelah dibaca langsung dihapus.
 function flash($nama, $isi = null)
 {
     // Kalau ada dua argumen, berarti sedang menyimpan pesan

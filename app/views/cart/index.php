@@ -24,7 +24,7 @@ $totalSementara = $subtotal + $ongkir;
 
         <div class="cart-layout">
 
-            <!-- ================= DAFTAR BARANG ================= -->
+            <!-- Daftar Barang -->
             <div class="cart-list">
 
                 <?php foreach ($items as $item): ?>
@@ -66,7 +66,7 @@ $totalSementara = $subtotal + $ongkir;
             </div>
 
 
-            <!-- ================= RINGKASAN ================= -->
+            <!-- Ringkasan -->
             <aside class="summary-card">
                 <h3>Ringkasan</h3>
 

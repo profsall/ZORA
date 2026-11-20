@@ -1,14 +1,9 @@
 <?php
-/**
- * CONTROLLER CHECKOUT
- * ===================
- * Menangani halaman checkout dan proses pembuatan pesanan.
- */
+// Menangani halaman checkout dan proses pembuatan pesanan.
 class CheckoutController
 {
-    /**
-     * Menampilkan halaman formulir checkout.
-     */
+
+    // Menampilkan halaman formulir checkout.
     public function index()
     {
         // Hanya pengguna yang sudah login yang boleh checkout
@@ -34,9 +29,7 @@ class CheckoutController
     }
 
 
-    /**
-     * Memproses formulir checkout menjadi pesanan.
-     */
+    // Memproses formulir checkout menjadi pesanan.
     public function store()
     {
         require_login();
@@ -50,9 +43,8 @@ class CheckoutController
 
         $error = [];
 
-        // ------------------------------------------------------------
+-
         // Kumpulkan data pengiriman dari form
-        // ------------------------------------------------------------
         $pengiriman = [
             'recipient_name'  => post_string('recipient_name'),
             'recipient_phone' => post_string('recipient_phone'),
@@ -63,9 +55,8 @@ class CheckoutController
             'note'            => post_string('note'),
         ];
 
-        // ------------------------------------------------------------
+
         // Validasi: kolom wajib
-        // ------------------------------------------------------------
         $kolomWajib = ['recipient_name', 'recipient_phone', 'address', 'city'];
         $adaYangKosong = false;
 
@@ -79,9 +70,7 @@ class CheckoutController
             $error[] = 'Nama penerima, nomor telepon, alamat, dan kota wajib diisi.';
         }
 
-        // ------------------------------------------------------------
         // Validasi: format nomor telepon
-        // ------------------------------------------------------------
         if ($pengiriman['recipient_phone'] !== '') {
             $polaTelepon = '/^[0-9+\-\s]{8,20}$/';
 
@@ -90,9 +79,7 @@ class CheckoutController
             }
         }
 
-        // ------------------------------------------------------------
         // Validasi: metode pembayaran
-        // ------------------------------------------------------------
         $metodeBayar = post_string('payment_method', 'bank_transfer');
         $metodeValid = ['bank_transfer', 'qris', 'ewallet', 'cod'];
 
@@ -100,9 +87,7 @@ class CheckoutController
             $error[] = 'Metode pembayaran tidak valid.';
         }
 
-        // ------------------------------------------------------------
         // Siapkan data barang dan hitung total
-        // ------------------------------------------------------------
         $daftarBarang = Cart::items();
         $subtotal = Cart::subtotal();
         $ongkir = hitung_ongkir($subtotal);
@@ -113,9 +98,7 @@ class CheckoutController
             redirect('products');
         }
 
-        // ------------------------------------------------------------
         // Kalau ada kesalahan, tampilkan kembali form beserta pesannya
-        // ------------------------------------------------------------
         if (!empty($error)) {
             render('checkout/index', [
                 'pageTitle'    => 'Checkout',
@@ -127,9 +110,7 @@ class CheckoutController
             return;
         }
 
-        // ------------------------------------------------------------
         // Semua valid, buat pesanan
-        // ------------------------------------------------------------
         try {
             $userId = (int) current_user()['id'];
 

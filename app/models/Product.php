@@ -1,10 +1,5 @@
 <?php
-/**
- * MODEL PRODUK
- * ============
- * Mengelola data tabel "products".
- * Dipakai untuk katalog, pencarian, detail produk, dan halaman admin.
- */
+// Mengelola data tabel "products". Dipakai untuk katalog, pencarian, detail produk, dan halaman admin.
 class Product
 {
     /**
@@ -23,9 +18,7 @@ class Product
         $kondisi = ["p.status = 'active'"];
         $nilai = [];
 
-        // ------------------------------------------------------------
         // Filter 1: kata pencarian (mencari di nama, deskripsi, dan SKU)
-        // ------------------------------------------------------------
         if (isset($filter['q']) && $filter['q'] !== '') {
             $kondisi[] = "(p.name LIKE :cari_nama
                         OR p.description LIKE :cari_deskripsi
@@ -38,18 +31,14 @@ class Product
             $nilai['cari_sku'] = $kataKunci;
         }
 
-        // ------------------------------------------------------------
         // Filter 2: kategori
-        // ------------------------------------------------------------
         if (isset($filter['category']) && $filter['category'] !== '') {
             $kondisi[] = "c.slug = :kategori";
             $nilai['kategori'] = $filter['category'];
         }
 
-        // ------------------------------------------------------------
         // Urutan tampil produk
         // Nilai sort sudah disaring di controller, jadi aman dipakai langsung.
-        // ------------------------------------------------------------
         $urutan = 'p.is_featured DESC, p.created_at DESC';
 
         if (isset($filter['sort'])) {
@@ -62,9 +51,7 @@ class Product
             }
         }
 
-        // ------------------------------------------------------------
         // Susun query lengkap
-        // ------------------------------------------------------------
         $sql = "SELECT
                     p.*,
                     c.name AS category_name,
@@ -80,10 +67,7 @@ class Product
         return $query->fetchAll();
     }
 
-
-    /**
-     * Mengambil produk unggulan untuk ditampilkan di halaman beranda.
-     */
+    // Mengambil produk unggulan untuk ditampilkan di halaman beranda.
     public static function featured($jumlah = 4)
     {
         $pdo = db();
@@ -109,10 +93,7 @@ class Product
     }
 
 
-    /**
-     * Mencari satu produk aktif berdasarkan slug.
-     * Dipakai di halaman detail produk.
-     */
+    // Mencari satu produk aktif berdasarkan slug. Dipakai di halaman detail produk.
     public static function findBySlug($slug)
     {
         $pdo = db();
@@ -140,10 +121,7 @@ class Product
     }
 
 
-    /**
-     * Mencari satu produk berdasarkan ID (semua status).
-     * Dipakai di halaman admin supaya produk arsip tetap bisa dibuka.
-     */
+    // Mencari satu produk berdasarkan ID (semua status). Dipakai di halaman admin supaya produk arsip tetap bisa dibuka.
     public static function find($id)
     {
         $pdo = db();
@@ -169,10 +147,7 @@ class Product
     }
 
 
-    /**
-     * Mengambil semua produk untuk halaman admin.
-     * Termasuk produk yang masih draft dan sudah diarsipkan.
-     */
+    // Mengambil semua produk untuk halaman admin. Termasuk produk yang masih draft dan sudah diarsipkan.
     public static function adminAll()
     {
         $pdo = db();
@@ -187,12 +162,7 @@ class Product
         $query = $pdo->query($sql);
         return $query->fetchAll();
     }
-
-
-    /**
-     * Menambah produk baru.
-     * Mengembalikan ID produk yang baru dibuat.
-     */
+    // Crete produk baru. Mengembalikan ID produk yang baru dibuat.
     public static function create($data)
     {
         $pdo = db();
@@ -228,10 +198,7 @@ class Product
         return (int) $pdo->lastInsertId();
     }
 
-
-    /**
-     * Memperbarui data produk.
-     */
+    // Update data produk.
     public static function update($id, $data)
     {
         $pdo = db();
@@ -276,10 +243,7 @@ class Product
     }
 
 
-    /**
-     * Mengarsipkan produk (bukan dihapus permanen).
-     * Produk arsip tidak muncul lagi di katalog.
-     */
+    // Mengarsipkan produk (bukan dihapus permanen). Produk arsip tidak muncul lagi di katalog.
     public static function delete($id)
     {
         $pdo = db();
@@ -288,10 +252,7 @@ class Product
         $pdo->prepare($sql)->execute(['id' => $id]);
     }
 
-
-    /**
-     * Mengaktifkan kembali produk yang sudah diarsipkan.
-     */
+    // Mengaktifkan kembali produk yang sudah diarsipkan.
     public static function restore($id)
     {
         $pdo = db();
@@ -300,13 +261,9 @@ class Product
         $pdo->prepare($sql)->execute(['id' => $id]);
     }
 
-
-    /**
-     * Membuat slug yang belum dipakai produk lain.
-     *
-     * Contoh: "Nova Phone" sudah ada, maka produk baru
-     * akan mendapat slug "nova-phone-2", "nova-phone-3", dan seterusnya.
-     */
+    // Membuat slug yang belum dipakai produk lain.
+    // Contoh: "Nova Phone" sudah ada, maka produk baru
+    // akan mendapat slug "nova-phone-2", "nova-phone-3", dan seterusnya.
     private static function buatSlugUnik($namaProduk)
     {
         $slugDasar = slugify($namaProduk);
@@ -322,14 +279,10 @@ class Product
         return $slug;
     }
 
-
-    /**
-     * Membuat slug untuk proses edit produk.
-     *
-     * Beda dengan buatSlugUnik(), di sini produk yang sedang diedit
-     * tidak dihitung sebagai pemakai slug. Jadi kalau nama produk
-     * tidak berubah, slug lamanya tetap dipertahankan.
-     */
+    // Membuat slug untuk proses edit produk.
+    // Beda dengan buatSlugUnik(), di sini produk yang sedang diedit
+    // tidak dihitung sebagai pemakai slug. Jadi kalau nama produk
+    // tidak berubah, slug lamanya tetap dipertahankan.
     private static function buatSlugUnikUntukEdit($idProduk, $namaProduk)
     {
         $slugDasar = slugify($namaProduk);
@@ -345,11 +298,8 @@ class Product
         return $slug;
     }
 
-
-    /**
-     * Memeriksa apakah slug sudah dipakai produk lain.
-     * Produk dengan ID $idProduk sendiri tidak dihitung.
-     */
+    // Memeriksa apakah slug sudah dipakai produk lain.
+    // Produk dengan ID $idProduk sendiri tidak dihitung.
     private static function slugDipakaiProdukLain($slug, $idProduk)
     {
         $pdo = db();
@@ -369,10 +319,7 @@ class Product
         return $jumlah > 0;
     }
 
-
-    /**
-     * Memeriksa apakah slug sudah dipakai produk lain.
-     */
+    // Memeriksa apakah slug sudah dipakai produk lain.
     private static function slugSudahDipakai($slug)
     {
         $pdo = db();

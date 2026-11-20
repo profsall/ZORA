@@ -1,8 +1,5 @@
 <?php
-/**
- * Data tambahan untuk halaman detail pesanan.
- */
-
+// Data tambahan untuk halaman detail pesanan.
 // Status pesanan dalam Bahasa Indonesia
 $labelStatus = label_status_pesanan($order['order_status']);
 
@@ -25,7 +22,7 @@ if ($payment) {
 
     <div class="order-detail-grid">
 
-        <!-- ================= BARANG & ALAMAT ================= -->
+        <!-- Barang & Alamat -->
         <div class="form-card">
 
             <h3>Produk dipesan</h3>
@@ -51,7 +48,7 @@ if ($payment) {
             </p>
         </div>
 
-        <!-- ================= RINGKASAN ================= -->
+        <!-- Ringkasan -->
         <aside class="summary-card">
             <h3>Ringkasan</h3>
 

@@ -1,14 +1,9 @@
 <?php
-/**
- * CONTROLLER AUTENTIKASI
- * ======================
- * Menangani daftar akun, login, dan logout.
- */
+// Menangani daftar akun, login, dan logout.
 class AuthController
 {
-    /**
-     * Menampilkan form login dan memproses login.
-     */
+    
+    // Menampilkan form login dan memproses login.
     public function login()
     {
         // Kalau sudah login, tidak perlu login lagi
@@ -70,9 +65,8 @@ class AuthController
     }
 
 
-    /**
-     * Menampilkan form daftar akun dan menyimpan akun baru.
-     */
+  
+    // Menampilkan form daftar akun dan menyimpan akun baru.
     public function register()
     {
         // Kalau sudah login, tidak perlu daftar lagi
@@ -96,9 +90,7 @@ class AuthController
             $password = post_string('password');
             $konfirmasi = post_string('password_confirmation');
 
-            // --------------------------------------------------------
             // Validasi data
-            // --------------------------------------------------------
             if (!required_value($nama)) {
                 $error[] = 'Nama wajib diisi.';
             }
@@ -122,9 +114,7 @@ class AuthController
                 $error[] = 'Konfirmasi password tidak sama.';
             }
 
-            // --------------------------------------------------------
             // Kalau semua validasi lolos, simpan akun baru
-            // --------------------------------------------------------
             if (empty($error)) {
                 try {
                     $sessionLama = session_id();
@@ -162,8 +152,8 @@ class AuthController
 
 
     /**
-     * Keluar dari akun (logout).
-     * Harus lewat form POST supaya tidak bisa dipicu dari link biasa.
+      Keluar dari akun (logout).
+      Harus lewat form POST supaya tidak bisa dipicu dari link biasa.
      */
     public function logout()
     {

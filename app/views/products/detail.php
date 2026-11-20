@@ -1,8 +1,5 @@
 <?php
-/**
- * Informasi tambahan untuk halaman detail produk.
- */
-
+// Informasi tambahan untuk halaman detail produk.
 // Tampilkan harga coret hanya kalau ada harga pembanding
 $hargaPembanding = '';
 
