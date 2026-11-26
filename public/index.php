@@ -1,10 +1,5 @@
 <?php
-/**
- * HALAMAN UTAMA APLIKASI (FRONT CONTROLLER)
- * Semua permintaan masuk lewat file ini.
- * Tugasnya: memuat file pendukung, membaca alamat URL,
- * lalu memanggil controller yang sesuai.
- */
+//memuat file pendukung, membaca alamat URL, lalu memanggil controller yang sesuai.
 
 // Mulai session untuk menyimpan data login dan keranjang
 session_start();
@@ -228,12 +223,12 @@ try {
             }
         }
 
-        // ----- Ubah status pesanan -----
+        // Ubah status pesanan
         elseif ($bagian2 === 'orders' && $bagian3 === 'update') {
             $controller->updateOrderStatus();
         }
 
-        // ----- Dashboard -----
+        // Dashboard 
         else {
             $controller->index();
         }
