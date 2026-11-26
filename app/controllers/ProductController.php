@@ -1,24 +1,16 @@
 <?php
-/**
- * CONTROLLER PRODUK
- * =================
- * Menangani halaman katalog dan halaman detail produk.
- */
+// Halaman katalog dan detail produk.
 class ProductController
 {
-    /**
-     * Menampilkan halaman katalog produk.
-     * Bisa dengan pencarian, filter kategori, dan pengurutan.
-     */
+
+    // Katalog dengan pencarian, filter kategori, dan urutan
     public function index()
     {
-        // Baca parameter dari URL
         $kataKunci = get_string('q');
         $kategori = get_string('category');
         $urutan = get_string('sort');
 
-        // Hanya urutan berikut yang diperbolehkan.
-        // Ini mencegah orang mengirim nilai sembarangan lewat URL.
+        // Cuma urutan ini yang boleh dipakai
         $urutanValid = ['price_asc', 'price_desc', 'name'];
 
         if (!in_array($urutan, $urutanValid, true)) {
@@ -43,23 +35,20 @@ class ProductController
     }
 
 
-     /* Menampilkan halaman detail satu produk.
-     Produk dicari berdasarkan slug di URL. */
+    // Detail satu produk, dicari dari slug di URL
     public function show($slug)
     {
         $slug = trim($slug);
 
-        // Slug kosong berarti produk tidak ada
         if ($slug === '') {
             http_response_code(404);
             render('home/not-found', ['pageTitle' => 'Produk tidak ditemukan']);
             return;
         }
 
-        // Cari produk yang aktif
         $produk = Product::findBySlug($slug);
 
-        // Produk tidak ditemukan atau sudah diarsipkan
+        // Produk nggak ada atau sudah diarsipkan
         if ($produk === null) {
             http_response_code(404);
             render('home/not-found', ['pageTitle' => 'Produk tidak ditemukan']);

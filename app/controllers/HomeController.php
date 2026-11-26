@@ -1,14 +1,14 @@
 <?php
-  //Menyiapkan data untuk halaman utama (homepage).
+// Data untuk halaman beranda.
 class HomeController
 {
-  // menampilkan halaman beranda
+    // Tampilkan beranda
     public function index()
     {
-        // Ambil 4 produk unggulan untuk ditampilkan di beranda
+        // 4 produk unggulan aja
         $produkUnggulan = Product::featured(4);
 
-        // Ambil semua kategori beserta jumlah produknya
+        // Kategori beserta jumlah produknya
         $kategori = Category::all();
 
         render('home/index', [

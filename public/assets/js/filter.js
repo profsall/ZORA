@@ -1,22 +1,14 @@
-
-/* ==========================================================
-   ZORA — filter katalog produk
-   ----------------------------------------------------------
-   Isinya:
-   1. Kirim form filter otomatis ketika kategori / urutan diganti
-   2. Kirim form filter ketika tombol Enter ditekan di kotak cari
-   ========================================================== */
+// Filter katalog: form dikirim otomatis saat kategori atau urutan diganti.
 
 document.addEventListener('DOMContentLoaded', function () {
 
     var form = document.querySelector('.filter-bar');
 
-    // Kalau tidak ada form filter di halaman ini, berhenti.
+    // Nggak ada form filter di halaman ini
     if (!form) {
         return;
     }
 
-    // Fungsi untuk mengirim form filter.
     function kirimFilter() {
 
         if (typeof form.requestSubmit === 'function') {
@@ -26,8 +18,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Setiap kali dropdown kategori atau urutan diganti,
-    // langsung kirim formnya.
+    // Ganti kategori atau urutan langsung kirim
     var daftarSelect = form.querySelectorAll('select');
     var i;
 
@@ -35,8 +26,7 @@ document.addEventListener('DOMContentLoaded', function () {
         daftarSelect[i].addEventListener('change', kirimFilter);
     }
 
-    // Kalau tombol Enter ditekan di kotak pencarian,
-    // kirim formnya juga.
+    // Enter di kotak cari juga kirim
     var kotakCari = form.querySelector('input[type="search"], input[name="q"], .search-field input');
 
     if (kotakCari) {

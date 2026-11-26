@@ -1,32 +1,25 @@
 <?php
-// Mengelola tabel "orders" dan "order_items".
-// Berisi proses paling penting: mengubah isi keranjang menjadi pesanan.
+// Pesanan pelanggan, termasuk proses ubah isi keranjang jadi order.
 class Order
 {
-    // Membuat pesanan baru dari isi keranjang.
-    // Mengembalikan ID pesanan yang baru dibuat. Langkah harus komplit kalau salah satu gagal itu gagal total
+    // Bikin pesanan dari isi keranjang, kembaliannya ID pesanan
     public static function createFromCart($userId, $pengiriman, $metodeBayar)
     {
         $pdo = db();
         $daftarBarang = Cart::items();
 
-        // Keranjang kosong tidak bisa di-checkout
         if (empty($daftarBarang)) {
             throw new RuntimeException('Keranjang masih kosong.');
         }
 
-        // Hitung total belanja
         $subtotal = Cart::subtotal();
         $ongkir = hitung_ongkir($subtotal);
         $total = $subtotal + $ongkir;
 
-        // Mulai transaksi. Semua perubahan belum permanen sampai commit().
         $pdo->beginTransaction();
 
         try {
-            // LANGKAH 1: Periksa stok setiap barang
-            // FOR UPDATE mengunci baris produk supaya tidak ada
-            // pengguna lain yang membeli stok yang sama di saat bersamaan.
+            // Cek stok dulu, FOR UPDATE biar nggak rebutan sama pembeli lain
             $sql = "SELECT stock, status
                     FROM products
                     WHERE id = :id
@@ -38,27 +31,22 @@ class Order
                 $queryStok->execute(['id' => $barang['product_id']]);
                 $stokProduk = $queryStok->fetch();
 
-                // Produk sudah tidak ada
                 if ($stokProduk === false) {
                     throw new RuntimeException('Stok ' . $barang['name'] . ' tidak mencukupi.');
                 }
 
-                // Produk sudah tidak dijual
                 if ($stokProduk['status'] !== 'active') {
                     throw new RuntimeException('Stok ' . $barang['name'] . ' tidak mencukupi.');
                 }
 
-                // Stok kurang dari yang dipesan
                 if ((int) $stokProduk['stock'] < (int) $barang['quantity']) {
                     throw new RuntimeException('Stok ' . $barang['name'] . ' tidak mencukupi.');
                 }
             }
 
-            // LANGKAH 2: Buat nomor pesanan yang unik
-            // Contoh hasil: ZOR260311A1B2C3
+            // Nomor pesanan contohnya ZOR260311A1B2C3
             $nomorPesanan = 'ZOR' . date('ymd') . strtoupper(bin2hex(random_bytes(3)));
 
-            // LANGKAH 3: Simpan data pesanan
             $sql = "INSERT INTO orders (
                         order_number, user_id,
                         recipient_name, recipient_phone,
@@ -92,11 +80,9 @@ class Order
             ]);
 
             $orderId = (int) $pdo->lastInsertId();
-          
-            // LANGKAH 4: Simpan rincian barang dan kurangi stok
-            // Nama, SKU, dan gambar disimpan sebagai salinan (snapshot).
-            // Tujuannya: kalau nanti produk diubah admin, riwayat pesanan
-            // lama tetap menampilkan data saat dibeli.
+
+            // Simpan rincian barang sekaligus kurangi stok.
+            // Nama dan SKU disalin biar riwayat lama nggak ikut berubah.
             $sqlItem = "INSERT INTO order_items
                             (order_id, product_id, product_name, product_sku,
                              product_image, unit_price, quantity, line_total)
@@ -129,30 +115,25 @@ class Order
                 ]);
             }
 
-            // LANGKAH 5: Catat data pembayaran
             Payment::create($orderId, $metodeBayar, $total);
 
-            // LANGKAH 6: Kosongkan keranjang
-            // Dilakukan di dalam transaksi yang sama, jadi kalau gagal seluruh pesanan ikut dibatalkan.
+            // Keranjang dikosongkan di transaksi yang sama
             Cart::clear(true, $pdo);
-          
-            // LANGKAH 7: Simpan semua perubahan secara permanen
+
             $pdo->commit();
 
             return $orderId;
 
         } catch (Throwable $error) {
-            // Ada yang gagal, batalkan semua perubahan
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
 
-            // Lempar ulang errornya supaya controller bisa menampilkan pesan
             throw $error;
         }
     }
 
-    // Mengambil semua pesanan milik satu pengguna.
+    // Semua pesanan milik satu pengguna
     public static function forUser($userId)
     {
         $pdo = db();
@@ -168,7 +149,7 @@ class Order
     }
 
 
-    // Mengambil semua pesanan untuk dashboard admin. Nama pelanggan ikut diambil dari tabel users.
+    // Semua pesanan buat dashboard admin, nama pelanggan ikut diambil
     public static function all()
     {
         $pdo = db();
@@ -185,7 +166,7 @@ class Order
     }
 
 
-    // Mengambil satu pesanan milik pengguna tertentu. user_id ikut dipakai di WHERE supaya pengguna tidak bisa membuka pesanan milik orang lain hanya dengan mengganti ID.
+    // user_id ikut dicek biar pesanan orang lain nggak bisa dibuka
     public static function findForUser($id, $userId)
     {
         $pdo = db();
@@ -210,7 +191,7 @@ class Order
         return $hasil;
     }
 
-    // Mengambil semua barang dari satu pesanan.
+    // Barang-barang dari satu pesanan
     public static function items($orderId)
     {
         $pdo = db();
@@ -222,10 +203,9 @@ class Order
         return $query->fetchAll();
     }
 
-    // Mengubah status pesanan. Kalau status diubah menjadi "cancelled", stok produk balik seperti sebelum pesanan dibuat.
+    // Ubah status pesanan, kalau dibatalkan stoknya dikembalikan
     public static function updateStatus($id, $status)
     {
-        // Status yang diperbolehkan
         $statusValid = ['confirmed', 'processing', 'shipped', 'completed', 'cancelled'];
 
         if (!in_array($status, $statusValid, true)) {
@@ -236,25 +216,24 @@ class Order
         $pdo->beginTransaction();
 
         try {
-            // 1. Ambil status pesanan saat ini (sekaligus dikunci)
+            // Ambil status sekarang sambil dikunci
             $sql = "SELECT order_status FROM orders WHERE id = :id FOR UPDATE";
             $query = $pdo->prepare($sql);
             $query->execute(['id' => $id]);
             $statusSekarang = $query->fetchColumn();
 
-            // Pesanan tidak ditemukan
             if ($statusSekarang === false) {
                 throw new RuntimeException('Pesanan tidak ditemukan.');
             }
 
-            // Pesanan yang sudah dibatalkan tidak bisa diaktifkan lagi
+            // Pesanan yang sudah dibatalkan nggak bisa dihidupkan lagi
             if ($statusSekarang === 'cancelled' && $status !== 'cancelled') {
                 throw new RuntimeException(
                     'Pesanan yang sudah dibatalkan tidak dapat diaktifkan kembali.'
                 );
             }
 
-            // 2. Kalau dibatalkan, kembalikan stok produk
+            // Kalau baru dibatalkan, stok produk balik lagi
             $baruDibatalkan = ($status === 'cancelled' && $statusSekarang !== 'cancelled');
 
             if ($baruDibatalkan === true) {
@@ -278,7 +257,6 @@ class Order
                 }
             }
 
-            // 3. Simpan status baru
             $sql = "UPDATE orders SET order_status = :status WHERE id = :id";
             $pdo->prepare($sql)->execute([
                 'status' => $status,

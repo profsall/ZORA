@@ -1,8 +1,8 @@
 <?php
-// Mengelola data tabel "users". Dipakai untuk daftar akun, login, dan profil.
+// Query ke tabel users: daftar akun, login, dan profil.
 class User
 {
-    // Mencari pengguna berdasarkan email. Hasilnya null kalau email tidak terdaftar.
+    // Cari pengguna lewat email, null kalau nggak terdaftar
     public static function findByEmail($email)
     {
         $pdo = db();
@@ -22,7 +22,7 @@ class User
         return $hasil;
     }
 
-    // Mengambil data pengguna berdasarkan ID. Password (hash) sengaja tidak diambil demi keamanan.
+    // Data pengguna berdasarkan ID, kolom password sengaja nggak diambil
     public static function find($id)
     {
         $pdo = db();
@@ -45,8 +45,7 @@ class User
     }
 
 
-    // Mendaftarkan pengguna baru. Role selalu "customer" dan status "active".
-    // Password diubah dulu menjadi hash memakai password_hash().
+    // Daftar akun baru, role selalu customer dan password di-hash
     public static function create($nama, $email, $telepon, $password)
     {
         $pdo = db();
@@ -65,23 +64,20 @@ class User
         return (int) $pdo->lastInsertId();
     }
 
-    // Memeriksa email dan password saat login.
-    // Hasilnya data pengguna kalau berhasil, atau null kalau gagal.
+    // Cek email dan password saat login, balikin data pengguna kalau cocok
     public static function authenticate($email, $password)
     {
         $pengguna = self::findByEmail($email);
 
-        // Kalau email tidak terdaftar, login gagal
         if ($pengguna === null) {
             return null;
         }
 
-        // Kalau akun tidak aktif, login gagal
+        // Akun non-aktif nggak boleh login
         if ($pengguna['status'] !== 'active') {
             return null;
         }
 
-        // Cocokkan password yang diketik dengan hash di database
         if (!password_verify($password, $pengguna['password'])) {
             return null;
         }
@@ -91,7 +87,7 @@ class User
         $sql = "UPDATE users SET last_login_at = NOW() WHERE id = :id";
         $pdo->prepare($sql)->execute(['id' => $pengguna['id']]);
 
-        // Hapus hash password sebelum disimpan ke session
+        // Hash password nggak perlu ikut ke session
         unset($pengguna['password']);
 
         return $pengguna;

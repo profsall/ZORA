@@ -1,17 +1,16 @@
 <?php
-// Menangani halaman checkout dan proses pembuatan pesanan.
+// Halaman checkout dan proses bikin pesanan.
 class CheckoutController
 {
 
-    // Menampilkan halaman formulir checkout.
+    // Tampilkan form checkout
     public function index()
     {
-        // Hanya pengguna yang sudah login yang boleh checkout
+        // Checkout cuma buat yang sudah login
         require_login();
 
         $daftarBarang = Cart::items();
 
-        // Keranjang kosong tidak bisa checkout
         if (empty($daftarBarang)) {
             flash('error', 'Keranjang masih kosong.');
             redirect('products');
@@ -29,7 +28,7 @@ class CheckoutController
     }
 
 
-    // Memproses formulir checkout menjadi pesanan.
+    // Proses form checkout jadi pesanan
     public function store()
     {
         require_login();
@@ -43,7 +42,6 @@ class CheckoutController
 
         $error = [];
 
-        // Kumpulkan data pengiriman dari form
         $pengiriman = [
             'recipient_name'  => post_string('recipient_name'),
             'recipient_phone' => post_string('recipient_phone'),
@@ -55,7 +53,7 @@ class CheckoutController
         ];
 
 
-        // Validasi: kolom wajib
+        // Kolom wajib nggak boleh kosong
         $kolomWajib = ['recipient_name', 'recipient_phone', 'address', 'city'];
         $adaYangKosong = false;
 
@@ -69,7 +67,7 @@ class CheckoutController
             $error[] = 'Nama penerima, nomor telepon, alamat, dan kota wajib diisi.';
         }
 
-        // Validasi: format nomor telepon
+        // Format nomor telepon
         if ($pengiriman['recipient_phone'] !== '') {
             $polaTelepon = '/^[0-9+\-\s]{8,20}$/';
 
@@ -78,7 +76,7 @@ class CheckoutController
             }
         }
 
-        // Validasi: metode pembayaran
+        // Metode pembayaran harus dari daftar
         $metodeBayar = post_string('payment_method', 'bank_transfer');
         $metodeValid = ['bank_transfer', 'qris', 'ewallet', 'cod'];
 
@@ -86,18 +84,17 @@ class CheckoutController
             $error[] = 'Metode pembayaran tidak valid.';
         }
 
-        // Siapkan data barang dan hitung total
+        // Siapkan data barang dan totalnya
         $daftarBarang = Cart::items();
         $subtotal = Cart::subtotal();
         $ongkir = hitung_ongkir($subtotal);
 
-        // Keranjang kosong
         if (empty($daftarBarang)) {
             flash('error', 'Keranjang masih kosong.');
             redirect('products');
         }
 
-        // Kalau ada kesalahan, tampilkan kembali form beserta pesannya
+        // Ada error, tampilkan lagi formnya
         if (!empty($error)) {
             render('checkout/index', [
                 'pageTitle'    => 'Checkout',
@@ -109,7 +106,7 @@ class CheckoutController
             return;
         }
 
-        // Semua valid, buat pesanan
+        // Semua valid, bikin pesanan
         try {
             $userId = (int) current_user()['id'];
 
@@ -127,14 +124,12 @@ class CheckoutController
             ]);
 
         } catch (RuntimeException $e) {
-            // Kesalahan yang memang bisa terjadi, misalnya stok habis.
-            // Pesannya aman untuk ditampilkan ke pengguna.
+            // Error yang wajar terjadi, misalnya stok habis
             flash('error', $e->getMessage());
             redirect('cart');
 
         } catch (Throwable $e) {
-            // Kesalahan teknis yang tidak terduga.
-            // Detailnya disimpan di log server, pengguna cukup melihat pesan umum.
+            // Error teknis, detailnya cukup di log
             error_log($e->getMessage());
             flash('error', 'Terjadi kesalahan ketika memproses pesanan.');
             redirect('cart');

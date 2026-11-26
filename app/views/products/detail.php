@@ -1,22 +1,17 @@
 <?php
-// Informasi tambahan untuk halaman detail produk.
-// Tampilkan harga coret hanya kalau ada harga pembanding
+// Harga pembanding dipakai buat harga coret
 $hargaPembanding = '';
 
 if ($product['compare_at_price']) {
     $hargaPembanding = rupiah($product['compare_at_price']);
 }
 
-// Cek ketersediaan stok
-$adaStok = (int) $product['stock'] > 0;
+// Stok 0 artinya barang habis
+$stok = (int) $product['stock'];
+$adaStok = $stok > 0;
+$labelStok = $adaStok ? (string) $stok : 'Sold Out';
 
-if ($adaStok) {
-    $labelStok = 'Tersedia';
-} else {
-    $labelStok = 'Stok habis';
-}
-
-// Warna produk, tampilkan tanda hubung kalau kosong
+// Warna kosong ditampilkan sebagai tanda hubung
 $warna = $product['color'];
 
 if (!$warna) {
@@ -54,8 +49,8 @@ if (!$warna) {
             <span>Warna</span>
             <strong><?= e($warna) ?></strong>
 
-            <span>Ketersediaan</span>
-            <strong><?= $labelStok ?></strong>
+            <span>Stok</span>
+            <strong><?= e($labelStok) ?></strong>
         </div>
 
         <?php if ($adaStok): ?>
@@ -64,13 +59,22 @@ if (!$warna) {
                 <input type="hidden" name="product_id" value="<?= (int) $product['id'] ?>">
 
                 <label>Jumlah
-                    <input type="number" name="quantity" value="1" min="1" max="<?= (int) $product['stock'] ?>">
+                    <input type="number" name="quantity" value="1" min="1" max="<?= $stok ?>">
                 </label>
 
-                <button class="btn-zora">Tambah ke keranjang <span></span></button>
+                <button class="btn-zora">
+                    <svg class="icon-cart" viewBox="0 0 24 24" width="17" height="17" fill="none"
+                         stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                         stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="9" cy="20" r="1.4"></circle>
+                        <circle cx="18" cy="20" r="1.4"></circle>
+                        <path d="M2 3h2.2l2.4 11.2h11.6l2-8H6"></path>
+                    </svg>
+                    Tambah ke keranjang
+                </button>
             </form>
         <?php else: ?>
-            <button class="btn-zora" disabled>Stok habis</button>
+            <button class="btn-zora" disabled>Sold Out</button>
         <?php endif; ?>
 
         <small class="stock-note">SKU: <?= e($product['sku']) ?></small>

@@ -1,19 +1,18 @@
 <?php
 // Bagian atas setiap halaman: judul, CSS, dan navbar.
-// File ini otomatis dipakai oleh fungsi render().
-// Hitung jumlah barang di keranjang untuk angka di navbar
+
+// Jumlah barang di keranjang buat angka di navbar
 $cartCount = 0;
 
 if (class_exists('Cart')) {
     $cartCount = Cart::count();
 }
 
-// Ambil pesan yang tersimpan dari halaman sebelumnya
+// Pesan dari halaman sebelumnya
 $success = flash('success');
 $error = flash('error');
 
-// Deskripsi halaman untuk mesin pencari
-// Controller bisa mengirim $metaDescription sendiri kalau perlu
+// Deskripsi halaman, controller boleh kirim $metaDescription sendiri
 if (!isset($metaDescription)) {
     $metaDescription = 'ZORA — pilihan elektronik untuk keseharian, dengan pengalaman belanja yang sederhana.';
 }
@@ -25,7 +24,7 @@ if (isset($pageTitle)) {
     $judulHalaman = $pageTitle;
 }
 
-// Waktu perubahan file CSS, dipakai supaya browser selalu ambil versi terbaru
+// Waktu ubah file CSS, biar browser selalu ambil versi terbaru
 $lokasiStyle = __DIR__ . '/../../../public/assets/css/style.css';
 $lokasiResponsive = __DIR__ . '/../../../public/assets/css/responsive.css';
 $lokasiAdmin = __DIR__ . '/../../../public/assets/css/admin.css';

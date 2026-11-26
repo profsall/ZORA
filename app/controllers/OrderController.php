@@ -1,15 +1,14 @@
 <?php
-// Menampilkan riwayat pesanan dan detail pesanan milik pelanggan.
+// Riwayat pesanan dan detail pesanan pelanggan.
 class OrderController
 {
-    // Menampilkan daftar riwayat pesanan milik pelanggan.
+    // Daftar riwayat pesanan
     public function index()
     {
         require_login();
 
         $userId = (int) current_user()['id'];
 
-        // Hanya ambil pesanan milik pengguna yang sedang login
         $daftarPesanan = Order::forUser($userId);
 
         render('account/orders', [
@@ -19,12 +18,11 @@ class OrderController
     }
 
 
-    // Menampilkan detail satu pesanan.
+    // Detail satu pesanan
     public function show($id)
     {
         require_login();
 
-        // ID pesanan harus berupa angka
         $orderId = filter_var($id, FILTER_VALIDATE_INT);
 
         if ($orderId === false || $orderId <= 0) {
@@ -35,8 +33,7 @@ class OrderController
 
         $userId = (int) current_user()['id'];
 
-        // Ambil pesanan hanya kalau memang milik pengguna ini.
-        // Ini mencegah orang lain membuka pesanan dengan mengganti ID.
+        // Filternya by user_id, biar pesanan orang lain nggak bisa dibuka
         $pesanan = Order::findForUser($orderId, $userId);
 
         if ($pesanan === null) {

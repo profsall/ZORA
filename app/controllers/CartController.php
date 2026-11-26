@@ -1,9 +1,9 @@
 <?php
-// Menangani halaman keranjang dan perubahan isinya.
+// Halaman keranjang dan semua perubahan isinya.
 class CartController
 {
 
-    // Menampilkan halaman keranjang.
+    // Tampilkan keranjang
     public function index()
     {
         $daftarBarang = Cart::items();
@@ -16,7 +16,7 @@ class CartController
     }
 
 
-    // Menambahkan produk ke keranjang.
+    // Tambah produk ke keranjang
     public function add()
     {
         if (!is_post()) {
@@ -29,7 +29,6 @@ class CartController
         $productId = (int) post_string('product_id');
         $quantity = (int) post_string('quantity');
 
-        // Jumlah minimal 1
         if ($quantity < 1) {
             $quantity = 1;
         }
@@ -47,12 +46,12 @@ class CartController
             flash('error', $e->getMessage());
         }
 
-        // Kembali ke halaman asal pengguna
+        // Balik ke halaman asal pengguna
         redirect($this->halamanAsal('products'));
     }
 
 
-    // Mengubah jumlah barang di keranjang.
+    // Ubah jumlah barang
     public function update()
     {
         if (!is_post()) {
@@ -86,7 +85,7 @@ class CartController
     }
 
 
-    // Menghapus barang dari keranjang.
+    // Hapus barang dari keranjang
     public function remove()
     {
         if (!is_post()) {
@@ -115,14 +114,8 @@ class CartController
     }
 
 
-    /**
-     * Menentukan halaman asal pengguna sebelum menambah produk.
-     *
-     * Contoh: kalau pengguna menekan tombol dari halaman detail produk,
-     * dia akan kembali ke halaman detail itu (bukan ke daftar produk).
-     *
-     * Kalau halaman asal tidak jelas atau mencurigakan, pakai halaman cadangan.
-     */
+    // Tentukan halaman asal, contohnya balik ke detail produk.
+    // Kalau asalnya nggak jelas, pakai halaman cadangan.
     private function halamanAsal($cadangan)
     {
         $alamatAsal = '';
@@ -131,13 +124,11 @@ class CartController
             $alamatAsal = $_SERVER['HTTP_REFERER'];
         }
 
-        // Tidak ada halaman asal, pakai cadangan
         if ($alamatAsal === '') {
             return $cadangan;
         }
 
-        // Bandingkan alamat situs halaman asal dengan situs saat ini.
-        // Kalau berbeda, berarti datang dari situs lain -> pakai cadangan.
+        // Asal dari situs lain diabaikan
         $hostAsal = strtolower((string) parse_url($alamatAsal, PHP_URL_HOST));
         $hostSekarang = strtolower((string) $this->hostSekarang());
 
@@ -145,7 +136,7 @@ class CartController
             return $cadangan;
         }
 
-        // Halaman asal harus berasal dari file index.php aplikasi ini
+        // Harus datang dari index.php aplikasi ini
         $jalurAsal = parse_url($alamatAsal, PHP_URL_PATH);
 
         if ($jalurAsal === false || $jalurAsal === null) {
@@ -158,7 +149,6 @@ class CartController
             return $cadangan;
         }
 
-        // Ambil parameter url dari halaman asal
         $queryAsal = parse_url($alamatAsal, PHP_URL_QUERY);
 
         if ($queryAsal === false || $queryAsal === null) {
@@ -179,16 +169,14 @@ class CartController
 
         $halaman = trim($halaman, '/');
 
-        // Hanya izinkan huruf, angka, tanda hubung, dan garis miring.
-        // Ini mencegah orang menyisipkan alamat berbahaya.
+        // Cuma huruf, angka, tanda hubung, dan garis miring
         $pola = '~^[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*$~';
 
         if (!preg_match($pola, $halaman)) {
             return $cadangan;
         }
 
-        // Kalau halaman asal punya parameter tambahan (misal filter),
-        // ikut sertakan supaya filter tidak hilang.
+        // Parameter lain kayak filter ikut dibawa
         unset($parameter['url']);
 
         $parameterTambahan = http_build_query($parameter);
@@ -201,7 +189,7 @@ class CartController
     }
 
 
-    // Mengambil nama host dari alamat situs yang sedang dibuka.
+    // Nama host dari alamat yang sedang dibuka
     private function hostSekarang()
     {
         $host = '';

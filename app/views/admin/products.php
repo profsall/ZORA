@@ -1,5 +1,5 @@
 <?php
-// Halaman kelola produk admin. Berisi form tambah produk dan tabel semua produk.
+// Halaman kelola produk: form tambah produk dan tabel semua produk.
 ?>
 <section class="container standard-page admin-page">
 
@@ -54,9 +54,7 @@
             </div>
 
             <label>Tag produk
-                <?php
-                    $currentTag = ''; ?>
-                ?>
+                <?php $currentTag = ''; ?>
 
                 <select name="tag">
                     <option value="" <?= $currentTag === '' ? 'selected' : '' ?>>

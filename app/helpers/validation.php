@@ -1,11 +1,7 @@
 <?php
-// Fungsi untuk memeriksa apakah data yang dikirim pengguna sudah sesuai aturan sebelum disimpan ke database.
-/**
- * Memeriksa apakah format email sudah benar.
- *
- * Contoh benar : budi@gmail.com
- * Contoh salah : budi@gmail
- */
+// Cek data dari pengguna sebelum masuk database.
+
+// Format email, contoh benar budi@gmail.com
 function valid_email($email)
 {
     if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
@@ -15,20 +11,19 @@ function valid_email($email)
     return true;
 }
 
-// Memeriksa panjang password minimal 8 karakter.
+// Password minimal 8 karakter
 function valid_password($password)
 {
     return strlen($password) >= 8;
 }
 
-// Memeriksa apakah input wajib sudah diisi.
-// Spasi saja dianggap kosong.
+// Input wajib diisi, spasi doang dianggap kosong
 function required_value($nilai)
 {
     return trim((string) $nilai) !== '';
 }
 
-// Memeriksa apakah URL gambar menggunakan http atau https.
+// URL gambar harus http atau https
 function valid_image_url($url)
 {
     if (filter_var($url, FILTER_VALIDATE_URL) === false) {

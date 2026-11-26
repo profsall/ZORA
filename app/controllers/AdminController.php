@@ -1,19 +1,16 @@
 <?php
- /* Menangani semua halaman khusus administrator:
- dashboard, kelola produk, dan ubah status pesanan.*/
-  
+// Semua halaman admin: dashboard, kelola produk, dan ubah status pesanan.
 class AdminController
 {
-    
-    //Halaman dashboard admin.
+
+    // Dashboard admin
     public function index()
     {
         require_admin();
 
-        // Hitung statistik toko
         $statistik = $this->ambilStatistik();
 
-        // Ambil 8 pesanan terbaru saja
+        // Cuma 8 pesanan terbaru yang ditampilkan
         $pesananTerbaru = array_slice(Order::all(), 0, 8);
 
         render('admin/index', [
@@ -25,7 +22,7 @@ class AdminController
 
 
 
-    // Halaman kelola produk: daftar produk + form tambah produk.
+    // Daftar produk plus form tambah produk
     public function products()
     {
         require_admin();
@@ -38,7 +35,7 @@ class AdminController
     }
 
 
-    // Menyimpan produk baru dari form.
+    // Simpan produk baru dari form
     public function createProduct()
     {
         require_admin();
@@ -50,10 +47,8 @@ class AdminController
 
         verify_csrf();
 
-        // Susun data produk dari input form
         $data = $this->ambilInputProduk();
 
-        // Periksa apakah datanya sudah benar
         $error = $this->periksaDataProduk($data);
 
         if (!empty($error)) {
@@ -76,8 +71,7 @@ class AdminController
 
 
 
-    // Halaman formulir edit produk.
-    
+    // Form edit produk
     public function editProduct($id)
     {
         require_admin();
@@ -104,8 +98,7 @@ class AdminController
     }
 
 
- 
-    // Menyimpan perubahan produk dari form edit.
+    // Simpan perubahan dari form edit
     public function updateProduct()
     {
         require_admin();
@@ -126,7 +119,7 @@ class AdminController
             return;
         }
 
-        // Susun data produk (termasuk status karena ini proses edit)
+        // Di edit, status produk ikut diambil dari form
         $data = $this->ambilInputProduk(true);
 
         $error = $this->periksaDataProduk($data);
@@ -151,7 +144,7 @@ class AdminController
 
 
 
-    // Mengarsipkan produk.
+    // Arsipkan produk
     public function deleteProduct()
     {
         require_admin();
@@ -185,7 +178,7 @@ class AdminController
 
 
 
-    // Mengaktifkan kembali produk yang sudah diarsipkan.
+    // Aktifkan lagi produk yang sudah diarsipkan
     public function restoreProduct()
     {
         require_admin();
@@ -218,7 +211,7 @@ class AdminController
     }
 
 
-    // Mengubah status sebuah pesanan.
+    // Ubah status satu pesanan
     public function updateOrderStatus()
     {
         require_admin();
@@ -243,16 +236,15 @@ class AdminController
             flash('success', 'Status pesanan berhasil diperbarui.');
 
         } catch (InvalidArgumentException $e) {
-            // Pesan ini memang dibuat untuk dibaca admin
+            // Pesannya memang buat dibaca admin
             flash('error', $e->getMessage());
 
         } catch (RuntimeException $e) {
-            // Pesan ini juga aman ditampilkan (misalnya "Pesanan tidak ditemukan")
+            // Sama, aman ditampilkan ke admin
             flash('error', $e->getMessage());
 
         } catch (Throwable $e) {
-            // Kesalahan teknis: simpan detailnya di log,
-            // pengguna cukup melihat pesan umum
+            // Error teknis cukup masuk log
             error_log('[Admin] updateOrderStatus: ' . $e->getMessage());
             flash('error', 'Terjadi kesalahan saat memperbarui status pesanan.');
         }
@@ -261,24 +253,24 @@ class AdminController
     }
 
 
-    // Menghitung statistik untuk dashboard admin.
+    // Angka-angka buat dashboard
     private function ambilStatistik()
     {
         $pdo = db();
 
-        // Jumlah produk yang masih aktif dijual
+        // Produk yang masih dijual
         $sqlProduk = "SELECT COUNT(*) FROM products WHERE status = 'active'";
         $jumlahProduk = (int) $pdo->query($sqlProduk)->fetchColumn();
 
-        // Jumlah seluruh pesanan
+        // Semua pesanan
         $sqlPesanan = "SELECT COUNT(*) FROM orders";
         $jumlahPesanan = (int) $pdo->query($sqlPesanan)->fetchColumn();
 
-        // Jumlah pelanggan (bukan admin)
+        // Pelanggan, admin nggak dihitung
         $sqlPelanggan = "SELECT COUNT(*) FROM users WHERE role = 'customer'";
         $jumlahPelanggan = (int) $pdo->query($sqlPelanggan)->fetchColumn();
 
-        // Total omzet dari pesanan yang sudah masuk proses
+        // Omzet dari pesanan yang sudah jalan
         $sqlOmzet = "SELECT COALESCE(SUM(total_amount), 0)
                      FROM orders
                      WHERE order_status IN ('confirmed', 'processing', 'shipped', 'completed')";
@@ -293,15 +285,11 @@ class AdminController
     }
 
 
-    /**
-     * Mengambil data produk dari input form.
-     *
-     * $pakaiStatus = true hanya dipakai saat mengedit produk,
-     * karena form tambah produk selalu berstatus "active".
-     */
+    // Ambil data produk dari form.
+    // Status cuma dipakai saat edit, produk baru selalu "active".
     private function ambilInputProduk($pakaiStatus = false)
     {
-        // Kategori dari dropdown. Kosong berarti produk tanpa kategori.
+        // Kategori kosong berarti tanpa kategori
         $categoryId = null;
         $kategoriInput = post_string('category_id');
 
@@ -309,7 +297,7 @@ class AdminController
             $categoryId = (int) $kategoriInput;
         }
 
-        // Harga pembanding boleh dikosongkan
+        // Harga pembanding boleh kosong
         $compareAtPrice = null;
         $hargaBanding = post_string('compare_at_price');
 
@@ -317,7 +305,7 @@ class AdminController
             $compareAtPrice = $hargaBanding;
         }
 
-        // Tag boleh dikosongkan
+        // Tag juga boleh kosong
         $tag = null;
         $tagInput = post_string('tag');
 
@@ -325,21 +313,20 @@ class AdminController
             $tag = $tagInput;
         }
 
-        // Stok tidak boleh kurang dari 0
+        // Stok nggak boleh minus
         $stock = (int) post_string('stock');
 
         if ($stock < 0) {
             $stock = 0;
         }
 
-        // Produk unggulan: 1 kalau dicentang, 0 kalau tidak
+        // Centang unggulan jadi 1, nggak dicentang jadi 0
         $isFeatured = 0;
 
         if (!empty($_POST['is_featured'])) {
             $isFeatured = 1;
         }
 
-        // Status hanya diambil saat mengedit produk
         $status = 'active';
 
         if ($pakaiStatus === true) {
@@ -363,30 +350,24 @@ class AdminController
     }
 
 
-    /**
-     * Memeriksa apakah data produk sudah lengkap dan benar.
-     * Mengembalikan daftar pesan error (kosong kalau semuanya valid).
-     */
+    // Cek data produk, balikin daftar error (kosong berarti aman)
     private function periksaDataProduk($data)
     {
         $error = [];
 
-        // Nama wajib diisi
         if (!required_value($data['name'])) {
             $error[] = 'Nama produk wajib diisi.';
         }
 
-        // SKU wajib diisi
         if (!required_value($data['sku'])) {
             $error[] = 'SKU wajib diisi.';
         }
 
-        // Harga harus lebih dari nol
         if ($data['price'] <= 0) {
             $error[] = 'Harga produk harus lebih dari nol.';
         }
 
-        // Harga pembanding, kalau diisi, harus berupa angka yang wajar
+        // Kalau diisi, harga pembanding harus angka wajar
         if ($data['compare_at_price'] !== null) {
             $angkaValid = is_numeric($data['compare_at_price']);
 
@@ -395,7 +376,7 @@ class AdminController
             }
         }
 
-        // Kalau kategori dipilih, pastikan kategorinya benar-benar ada
+        // Kategori yang dipilih harus ada di database
         if ($data['category_id'] !== null) {
             $kategori = Category::find((int) $data['category_id']);
 
@@ -404,14 +385,13 @@ class AdminController
             }
         }
 
-        // URL gambar, kalau diisi, harus berupa alamat http atau https
+        // URL gambar harus http atau https
         if ($data['image_url'] !== '') {
             if (!valid_image_url($data['image_url'])) {
                 $error[] = 'URL gambar tidak valid.';
             }
         }
 
-        // Status produk harus salah satu dari daftar yang diperbolehkan
         $statusValid = ['active', 'draft', 'archived'];
 
         if (!in_array($data['status'], $statusValid, true)) {

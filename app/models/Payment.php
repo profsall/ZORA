@@ -1,14 +1,13 @@
 <?php
-// Mengelola data tabel "payments".
+// Query ke tabel payments.
 class Payment
 {
-    // Mencatat pembayaran baru untuk sebuah pesanan. Status awalnya selalu "pending" (menunggu pembayaran).
+    // Catat pembayaran baru, statusnya selalu "pending" (menunggu)
     public static function create($orderId, $metode, $jumlah)
     {
-        // Metode pembayaran yang diperbolehkan
         $metodeValid = ['bank_transfer', 'qris', 'ewallet', 'cod'];
 
-        // Kalau metode tidak dikenal, pakai transfer bank
+        // Metode aneh dianggap transfer bank
         if (!in_array($metode, $metodeValid, true)) {
             $metode = 'bank_transfer';
         }
@@ -30,7 +29,7 @@ class Payment
         return (int) $pdo->lastInsertId();
     }
 
-    // Mengambil data pembayaran terbaru dari sebuah pesanan. Hasilnya null kalau belum ada data pembayaran.
+    // Pembayaran terbaru dari satu pesanan, null kalau belum ada
     public static function forOrder($orderId)
     {
         $pdo = db();

@@ -1,29 +1,20 @@
 <?php
-/**
- * Mengelola tabel "carts" dan "cart_items".
- *
- * Keranjang bisa dimiliki oleh dua jenis pengunjung:
- * - Pengunjung yang sudah login  -> dikenali dari user_id
- * - Pengunjung yang belum login  -> dikenali dari session_id
- */
+// Keranjang bisa milik tamu (session_id) atau member yang login (user_id).
 class Cart
 {
-    // Mencari ID keranjang yang sedang dipakai. Kalau belum ada, keranjang baru langsung dibuat.
+    // Ambil keranjang aktif, buat baru kalau belum ada
     private static function cartId()
     {
         $pdo = db();
         $userId = null;
 
-        // Cek apakah penggunanya sedang login
         if (isset($_SESSION['user']['id'])) {
             $userId = $_SESSION['user']['id'];
         }
 
         $sessionId = session_id();
 
-        // Cari keranjang yang sudah ada
         if ($userId !== null) {
-            // Keranjang milik pengguna yang sudah login
             $sql = "SELECT id FROM carts
                     WHERE user_id = :user_id
                       AND status = 'active'
@@ -32,7 +23,6 @@ class Cart
             $query = $pdo->prepare($sql);
             $query->execute(['user_id' => $userId]);
         } else {
-            // Keranjang milik pengunjung yang belum login
             $sql = "SELECT id FROM carts
                     WHERE session_id = :session_id
                       AND status = 'active'
@@ -44,13 +34,11 @@ class Cart
 
         $cartId = $query->fetchColumn();
 
-        // Kalau keranjang sudah ada, langsung pakai itu
         if ($cartId !== false) {
             return (int) $cartId;
         }
 
-
-        // Keranjang belum ada, buat yang baru
+        // Belum ada keranjang, bikin yang baru
         $sql = "INSERT INTO carts (user_id, session_id, status)
                 VALUES (:user_id, :session_id, 'active')";
 
@@ -64,9 +52,7 @@ class Cart
     }
 
 
-    /**
-     * Mengambil semua barang di dalam keranjang.
-     */
+    // Semua barang yang ada di keranjang
     public static function items()
     {
         $pdo = db();
@@ -96,17 +82,11 @@ class Cart
     }
 
 
-    /**
-     * Menambahkan produk ke keranjang.
-     *
-     * Kalau produk tersebut sudah ada di keranjang,
-     * jumlahnya ditambah (bukan dibuat baris baru).
-     */
+    // Produk yang sudah ada di keranjang cuma ditambah jumlahnya
     public static function add($productId, $quantity = 1)
     {
         $pdo = db();
 
-        // Pastikan produknya ada dan masih dijual
         $produk = Product::find($productId);
 
         if ($produk === null) {
@@ -117,16 +97,13 @@ class Cart
             throw new RuntimeException('Produk tidak tersedia.');
         }
 
-        // Jangan melebihi stok yang tersedia
         if ((int) $produk['stock'] < $quantity) {
             throw new RuntimeException('Stok produk tidak mencukupi.');
         }
 
         $cartId = self::cartId();
 
-        // ON DUPLICATE KEY UPDATE membuat jumlah otomatis bertambah
-        // kalau produk sudah ada di keranjang.
-        // LEAST() memastikan jumlahnya tidak melebihi stok.
+        // LEAST() biar jumlahnya nggak lewat dari stok
         $sql = "INSERT INTO cart_items (cart_id, product_id, quantity, unit_price)
                 VALUES (:cart_id, :product_id, :quantity, :unit_price)
                 ON DUPLICATE KEY UPDATE
@@ -143,17 +120,13 @@ class Cart
     }
 
 
-    /**
-     * Mengubah jumlah barang di keranjang.
-     */
+    // Ubah jumlah barang di keranjang
     public static function update($itemId, $quantity)
     {
         $pdo = db();
         $cartId = self::cartId();
 
-        // Ambil data barang sekaligus memastikan barang ini
-        // memang milik keranjang yang sedang dipakai.
-        // Ini mencegah pengguna mengubah keranjang milik orang lain.
+        // Filter cart_id penting, biar nggak bisa ubah keranjang orang lain
         $sql = "SELECT ci.quantity, p.stock
                 FROM cart_items ci
                 JOIN products p ON p.id = ci.product_id
@@ -168,12 +141,10 @@ class Cart
 
         $barang = $query->fetch();
 
-        // Barang tidak ditemukan di keranjang ini
         if ($barang === false) {
             throw new RuntimeException('Item keranjang tidak ditemukan.');
         }
 
-        // Jumlah tidak boleh melebihi stok
         if ($quantity > (int) $barang['stock']) {
             throw new RuntimeException('Jumlah melebihi stok yang tersedia.');
         }
@@ -192,9 +163,7 @@ class Cart
     }
 
 
-    /**
-     * Menghapus satu barang dari keranjang.
-     */
+    // Hapus satu barang dari keranjang
     public static function remove($itemId)
     {
         $pdo = db();
@@ -212,9 +181,7 @@ class Cart
     }
 
 
-    /**
-     * Menghitung total harga semua barang di keranjang.
-     */
+    // Total harga semua barang
     public static function subtotal()
     {
         $daftarBarang = self::items();
@@ -228,10 +195,7 @@ class Cart
     }
 
 
-    /**
-     * Menghitung jumlah seluruh barang di keranjang.
-     * Dipakai untuk angka kecil di ikon keranjang pada navbar.
-     */
+    // Jumlah barang buat angka kecil di ikon keranjang
     public static function count()
     {
         $daftarBarang = self::items();
@@ -245,12 +209,7 @@ class Cart
     }
 
 
-    /**
-     * Mengosongkan keranjang.
-     *
-     * $ubahStatus = true -> keranjang ditandai "converted" (sudah jadi pesanan)
-     * $pdo                -> koneksi yang dipakai saat transaksi checkout
-     */
+    // $ubahStatus = true kalau keranjang sudah jadi pesanan
     public static function clear($ubahStatus = false, $pdo = null)
     {
         if ($pdo === null) {
@@ -259,11 +218,9 @@ class Cart
 
         $cartId = self::cartId();
 
-        // Hapus semua barang di keranjang
         $sql = "DELETE FROM cart_items WHERE cart_id = :cart_id";
         $pdo->prepare($sql)->execute(['cart_id' => $cartId]);
 
-        // Tandai keranjang sudah selesai dipakai
         if ($ubahStatus === true) {
             $sql = "UPDATE carts SET status = 'converted' WHERE id = :cart_id";
             $pdo->prepare($sql)->execute(['cart_id' => $cartId]);
@@ -271,18 +228,12 @@ class Cart
     }
 
 
-    /**
-     * Menggabungkan keranjang tamu ke keranjang pengguna setelah login.
-     *
-     * Jadi barang yang sudah dimasukkan sebelum login tidak hilang.
-     */
+    // Pindahkan keranjang tamu ke akun, dipanggil setelah login
     public static function mergeGuestCart($userId, $sessionIdLama)
     {
         $pdo = db();
 
-        // ------------------------------------------------------------
-        // 1. Cari keranjang tamu berdasarkan session ID yang lama
-        // ------------------------------------------------------------
+        // Cari keranjang tamu dari session lama
         $sql = "SELECT id FROM carts
                 WHERE session_id = :session_id
                   AND status = 'active'
@@ -294,14 +245,11 @@ class Cart
         $query->execute(['session_id' => $sessionIdLama]);
         $guestCartId = $query->fetchColumn();
 
-        // Tidak ada keranjang tamu, tidak perlu apa-apa
         if ($guestCartId === false) {
             return;
         }
 
-        // ------------------------------------------------------------
-        // 2. Cari keranjang milik pengguna
-        // ------------------------------------------------------------
+        // Cari keranjang milik pengguna
         $sql = "SELECT id FROM carts
                 WHERE user_id = :user_id
                   AND status = 'active'
@@ -312,9 +260,7 @@ class Cart
         $query->execute(['user_id' => $userId]);
         $userCartId = $query->fetchColumn();
 
-        // ------------------------------------------------------------
-        // 3a. Pengguna belum punya keranjang -> ambil alih keranjang tamu
-        // ------------------------------------------------------------
+        // Belum punya keranjang, keranjang tamu diambil alih
         if ($userCartId === false) {
             $sql = "UPDATE carts
                     SET user_id = :user_id, session_id = :session_id
@@ -330,9 +276,7 @@ class Cart
             return;
         }
 
-        // ------------------------------------------------------------
-        // 3b. Pengguna sudah punya keranjang -> pindahkan semua barangnya
-        // ------------------------------------------------------------
+        // Sudah punya keranjang, barang tamu dipindah ke situ
         $sql = "SELECT product_id, quantity, unit_price
                 FROM cart_items
                 WHERE cart_id = :cart_id";
@@ -342,7 +286,6 @@ class Cart
         $barangTamu = $query->fetchAll();
 
         foreach ($barangTamu as $barang) {
-            // Kalau produknya sudah ada, jumlahnya ditambah
             $sql = "INSERT INTO cart_items (cart_id, product_id, quantity, unit_price)
                     VALUES (:cart_id, :product_id, :quantity, :unit_price)
                     ON DUPLICATE KEY UPDATE
@@ -356,9 +299,6 @@ class Cart
             ]);
         }
 
-        // ------------------------------------------------------------
-        // 4. Tandai keranjang tamu sudah tidak dipakai
-        // ------------------------------------------------------------
         $sql = "UPDATE carts SET status = 'abandoned' WHERE id = :cart_id";
         $pdo->prepare($sql)->execute(['cart_id' => $guestCartId]);
     }

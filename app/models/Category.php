@@ -1,16 +1,14 @@
 <?php
-// Mengelola data tabel "categories".
-// Model adalah bagian yang berhubungan langsung dengan database.
+// Query ke tabel categories.
 class Category
 {
-    // Mengambil semua kategori.
-    // $hanyaAktif = true  -> hanya kategori yang aktif saja
-    // $hanyaAktif = false -> semua kategori (dipakai di halaman admin)
+    // Semua kategori.
+    // $hanyaAktif kalau true cuma kategori aktif, false semua (dipakai admin).
     public static function all($hanyaAktif = true)
     {
         $pdo = db();
 
-        // Query utama: ambil kategori beserta jumlah produknya
+        // Jumlah produk aktif ikut dihitung
         $sql = "SELECT
                     c.id,
                     c.name,
@@ -37,7 +35,7 @@ class Category
     }
 
 
-    // Mengambil satu kategori berdasarkan ID. Hasilnya null kalau kategori tidak ditemukan.
+    // Satu kategori berdasarkan ID, null kalau nggak ada
     public static function find($id)
     {
         $pdo = db();

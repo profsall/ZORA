@@ -1,6 +1,7 @@
 <?php
-//Menu navigasi yang muncul di bagian atas semua halaman.
-// Ambil nama depan pengguna yang sedang login
+// Menu yang muncul di atas semua halaman.
+
+// Nama depan pengguna yang sedang login
 $namaDepan = '';
 
 if (is_logged_in()) {
@@ -9,7 +10,7 @@ if (is_logged_in()) {
     $namaDepan = $potonganNama[0];
 }
 
-// Halaman tujuan tombol akun
+// Tujuan tombol akun
 if (is_admin()) {
     $linkAkun = base_url('admin');
 } else {
@@ -19,16 +20,13 @@ if (is_admin()) {
 <header class="site-header">
   <div class="container header-inner">
 
-    <!-- Logo -->
     <a class="brand" href="<?= base_url('home') ?>" aria-label="ZORA Home">ZORA<span>.</span></a>
 
-    <!-- Tombol menu untuk layar HP -->
     <button class="mobile-menu-toggle" type="button" aria-label="Buka menu" aria-expanded="false">
       <span></span>
       <span></span>
     </button>
 
-    <!-- Menu utama -->
     <nav class="main-nav">
       <a href="<?= base_url('products') ?>">Semua Produk</a>
       <a href="<?= base_url('products?category=smartphones') ?>">Smartphones</a>
@@ -39,7 +37,6 @@ if (is_admin()) {
       <a href="<?= base_url('products?category=accessories') ?>">Accessories</a>
     </nav>
 
-    <!-- Tombol akun dan keranjang -->
     <div class="header-actions">
 
       <?php if (is_logged_in()): ?>
@@ -51,6 +48,13 @@ if (is_admin()) {
       <?php endif; ?>
 
       <a class="header-cart" href="<?= base_url('cart') ?>" aria-label="Keranjang">
+        <svg class="icon-cart" viewBox="0 0 24 24" width="19" height="19" fill="none"
+             stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+             stroke-linejoin="round" aria-hidden="true">
+          <circle cx="9" cy="20" r="1.4"></circle>
+          <circle cx="18" cy="20" r="1.4"></circle>
+          <path d="M2 3h2.2l2.4 11.2h11.6l2-8H6"></path>
+        </svg>
         Keranjang <span><?= (int) $cartCount ?></span>
       </a>
 

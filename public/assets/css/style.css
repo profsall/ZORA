@@ -625,6 +625,16 @@ img {
     margin-bottom: 34px;
 }
 
+.title-with-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.icon-cart {
+    flex: 0 0 auto;
+}
+
 .cart-layout,
 .checkout-layout,
 .order-detail-grid {
