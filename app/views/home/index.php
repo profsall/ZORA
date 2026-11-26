@@ -7,7 +7,7 @@
             <p>Temukan perangkat pilihan untuk bekerja, belajar, dan menikmati setiap hari.</p>
             <a class="btn-zora" href="<?= base_url('products') ?>">Jelajahi Produk <span>→</span></a>
             <div class="hero-note">
-                <span class="note-line"></span> Pilihan praktis. Kualitas terkurasi.
+                <span></span> Pilihan praktis. Kualitas terkurasi.
             </div>
         </div>
 
@@ -34,7 +34,7 @@
             <span class="eyebrow">PILIH SESUAI KEBUTUHAN</span>
             <h2>Jelajahi kategori</h2>
         </div>
-        <a class="text-link" href="<?= base_url('products') ?>">Lihat semua <span>→</span></a>
+        <a class="text-link" href="<?= base_url('products') ?>">Lihat semua <span></span></a>
     </div>
 
     <div class="category-grid">
@@ -60,7 +60,7 @@
                 <h2>Produk pilihan</h2>
                 <p>Perangkat yang fungsional, tampil sederhana, dan nyaman digunakan.</p>
             </div>
-            <a class="text-link" href="<?= base_url('products') ?>">Lihat katalog <span>→</span></a>
+            <a class="text-link" href="<?= base_url('products') ?>">Lihat katalog<span></span></a>
         </div>
 
         <div class="product-grid">
