@@ -43,7 +43,6 @@ class CheckoutController
 
         $error = [];
 
--
         // Kumpulkan data pengiriman dari form
         $pengiriman = [
             'recipient_name'  => post_string('recipient_name'),
